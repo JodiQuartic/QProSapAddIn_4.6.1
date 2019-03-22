@@ -301,11 +301,11 @@ namespace HANATableViewer
                 {
                     while (dr.Read())
                     {
-                        colls = colls + dr.GetString(0) + ", ";
+                        colls = colls + dr.GetString(0) + ",";
                     }
                     
                 }
-                colls.TrimEnd(charsToTrim);
+                colls = colls.TrimEnd(charsToTrim);
                 dr.Close();
 
 

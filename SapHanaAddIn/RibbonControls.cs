@@ -3,6 +3,9 @@ using ArcGIS.Core.Data;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
+using ArcGIS.Core.CIM;
+using ArcGIS.Desktop.Framework;
+using ArcGIS.Desktop.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,9 +14,9 @@ using System.Data.SqlClient;
 using System.Windows;
 using ArcGIS.Desktop.Mapping.Events;
 using Sap.Data.Hana;
-using ArcGIS.Core.CIM;
-using ArcGIS.Desktop.Framework;
-using ArcGIS.Desktop.Core;
+
+using System.Windows.Input;
+using ArcGIS.Core.Geometry;
 
 namespace SapHanaAddIn
 {
@@ -222,6 +225,59 @@ namespace SapHanaAddIn
         }
 
     }
+    class toolSAPIdentify : MapTool
+    {
+        public toolSAPIdentify()
+        {
+            IsSketchTool = true;
+            SketchType = SketchGeometryType.Rectangle;
 
+            //To perform a interactive selection or identify in 3D or 2D, sketch must be created in screen coordinates.
+            SketchOutputMode = SketchOutputMode.Screen;
+        }
+        protected override Task<bool> OnSketchCompleteAsync(Geometry geometry)
+        {
+            return QueuedTask.Run( () => {
+                var mapView = MapView.Active;
+                if (mapView == null)
+                    return true;
+
+                //Get all the features that intersect the sketch geometry and flash them in the view. 
+                var results = mapView.GetFeatures(geometry);
+                foreach (var item in results)
+                {
+                    FeatureLayer pfl = (FeatureLayer)item.Key;
+                    QueryFilter pQF = new QueryFilter();
+                    pQF.ObjectIDs = item.Value;
+                    RowCursor pCur = pfl.Search(pQF);
+                    while (pCur.MoveNext())
+                    {
+                        Row prow = pCur.Current;
+                        Feature pfeat = (Feature)prow;
+
+                        //prow[0];
+                        //prow[0] = 's';
+
+                    }
+
+                    //MessageBox.Show(item.Key.ToString());
+                }
+                mapView.FlashFeature(results);
+
+                //Show a message box reporting each layer the number of the features.
+                MessageBox.Show(String.Join("\n", results.Select(kvp => String.Format("{0}: {1}", kvp.Key.Name, kvp.Value.Count()))), "Identify Result");
+                return true;
+
+            });
+        }
+        protected override Task HandleMouseDownAsync(MapViewMouseButtonEventArgs e)
+        {
+            return QueuedTask.Run(() =>
+            {
+                var mapPoint = MapView.Active.ClientToMap(e.ClientPoint);
+            });
+        }
+
+    }
 
 }

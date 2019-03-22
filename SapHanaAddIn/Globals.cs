@@ -1,4 +1,5 @@
-﻿namespace SapHanaAddIn
+﻿
+namespace SapHanaAddIn
 {
     public static class Globals
     {

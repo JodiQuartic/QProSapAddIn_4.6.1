@@ -37,6 +37,7 @@
           <button refID="btnSAPIdentify" size="large" />
           <button refID="btnSqlExplorer" size="large"  />
           <button refID="btnSAPConflictDetection" size="large" />
+          <button refID="toolSAPIdentify" size="large" />
         </group>
       </groups>
 
@@ -64,7 +65,7 @@
         <button id="btnSAPIdentify" keytip="Display SAP Orders for asset" caption="Identify" className="btnSAPIdentify" loadOnClick="true"  smallImage="Images\IdentifyTool.png" largeImage="Images\IdentifyTool32.png" />
         <button id="btnAddViewToMap" keytip="Add SAP View" caption="Add View" className="btnAddViewToMap" loadOnClick="true"  smallImage="Images\AddContent16.png" largeImage="Images\AddContent32.png" />
         <button id="btnSAPConflictDetection" keytip="ConflictDetection" caption="Find Conflicts" className="btnConflictDetection" loadOnClick="true"  smallImage="Images\VersionChange16.png" largeImage="Images\VersionChange32.png" />
-
+        <tool id ="toolSAPIdentify" keytip="Idtentify a SAP asset" caption="SAP Assets" className="toolSAPIdentify" loadOnClick="true" smallImage="Images\IdentifyTool.png" largeImage="Images\IdentifyTool32.png" />
       </controls> 
       
     </insertModule>
