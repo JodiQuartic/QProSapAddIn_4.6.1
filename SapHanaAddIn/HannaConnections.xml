@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Connections>
+  <Connection>
+    <Name>
+      sapde1hana
+    </Name>
+    <Server>
+      sapde1hana:30015
+    </Server>
+    <UserID>
+      jluostarinen
+    </UserID>
+    <Password>
+      Sap2019!
+    </Password>
+  </Connection>
+  <Connection>
+    <Name>
+      sapqe2hana
+    </Name>
+    <Server>
+      sapqe2hana.ad.sannet.gov:30015
+    </Server>
+    <UserID>
+      jluostarinen
+    </UserID>
+    <Password>
+      Sap2018!
+    </Password>
+  </Connection>
+</Connections>

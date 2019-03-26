@@ -47,12 +47,15 @@
           <comboBox refID="cboEnv" />
           <button refID="btnConnect" />
           <labelControl refID="lblHasConn" />
+          <labelControl refID="lblHasConnTrue" />
         </subgroup>
       </subgroups>
       
       <controls>
         <!-- add your controls here -->
-        <labelControl id="lblHasConn" caption="Not Connected."  />
+        <labelControl id="lblHasConn" caption="Not Connected."   />
+        <labelControl id="lblHasConnTrue" caption="Connected."   />
+        
         <comboBox id="cboEnv" disableIfBusy="true" isEditable="false" className="cboEnv" isReadOnly="true" keytip="SV" itemWidth="120" caption="Environment: ">
           <tooltip heading="Set Environment">
             Toggles the Visibility and Selectability by Asset Group.<disabledText />

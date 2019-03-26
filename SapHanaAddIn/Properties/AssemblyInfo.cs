@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("SapHanaAddIn")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Acme")]
+[assembly: AssemblyCompany("Quartic")]
 [assembly: AssemblyProduct("SapHanaAddIn")]
 [assembly: AssemblyCopyright("Copyright © Acme 2018")]
 [assembly: AssemblyTrademark("")]

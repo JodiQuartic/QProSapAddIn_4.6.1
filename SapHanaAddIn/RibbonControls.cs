@@ -14,14 +14,20 @@ using System.Data.SqlClient;
 using System.Windows;
 using ArcGIS.Desktop.Mapping.Events;
 using Sap.Data.Hana;
-
+using System.IO;
 using System.Windows.Input;
 using ArcGIS.Core.Geometry;
+using System.Xml;
+using System.Reflection;
 
 namespace SapHanaAddIn
 {
+    
     public class cboEnv : ComboBox
     {
+        //static Dictionary<string, string> conProps { get { return lstEnvNames; } set { lstEnvNames = value;  } }
+        private static Dictionary<string, string> lstEnvNames = new Dictionary<string, string>();
+        //public Dictionary<string, string> lstEnvNames = new Dictionary<string, string>();
         private static cboEnv comboBox;
         public static cboEnv cboBox { get { return comboBox; } set { comboBox = value; } }
         public cboEnv()
@@ -35,16 +41,44 @@ namespace SapHanaAddIn
         {
             await QueuedTask.Run(() =>
             {
-                List<string> lstEnvNames = new List<string>();
-                //lstEnvNames.Add("DevGis");
-                lstEnvNames.Add("DevHana");
-                //lstEnvNames.Add("QAGis");
-                lstEnvNames.Add("QAHana");
 
-                foreach (string name in lstEnvNames)
+                var assembly = Assembly.GetExecutingAssembly();
+                //var resourceName = "Quartic.SapHanaAddIn.HannaConnections.xml";
+                string resourceName2 = assembly.GetManifestResourceNames().Single(str => str.EndsWith("HannaConnections.xml"));
+                //List<string> lstEnvNames = new List<string>();
+                
+                XmlDocument xmlDoc = new XmlDocument();
+                using (Stream stream = assembly.GetManifestResourceStream(resourceName2))
+                using (StreamReader reader = new StreamReader(stream))
                 {
-                    cmb.Add(new ComboBoxItem(name));
+                    string result = reader.ReadToEnd();
+
+                    xmlDoc.LoadXml(result);
                 }
+                foreach (XmlNode nose in xmlDoc.DocumentElement.ChildNodes)
+                {
+
+                    lstEnvNames.Add(nose.ChildNodes[0].InnerText.Trim(),"Server=" + nose.ChildNodes[1].InnerText.Trim() + ";UserID=" + nose.ChildNodes[2].InnerText.Trim() +";Password=" + nose.ChildNodes[3].InnerText.Trim());
+                }
+                //XmlDataDocument xmldoc = new XmlDataDocument();
+                //FileStream fs = new FileStream("HannaConnections.xml", FileMode.Open, FileAccess.Read);
+
+
+
+
+
+                //lstEnvNames.Add("DevGis");
+                //lstEnvNames.Add("DevHana");
+                //lstEnvNames.Add("QAGis");
+
+                foreach (KeyValuePair<string,string> item in lstEnvNames)
+                {
+                    cmb.Add(new ComboBoxItem(item.Key.ToString()));
+                }
+                //foreach (string name in lstEnvNames)
+                //{
+                //    cmb.Add(new ComboBoxItem(name));
+                //}
             });
         }
         protected override async void OnSelectionChange(ComboBoxItem item)
@@ -53,33 +87,56 @@ namespace SapHanaAddIn
             {
                 try
                 {
-                    switch (item.Text)
+                    if (Globals.isHanaConn == null)
                     {
-                        case ("DevGis"):
-                            Globals.sqlConn.ConnectionString = Globals.gisDevConnStr;
-                            break;
-                        case ("DevHana"):
-                            Globals.hanaConn = new HanaConnection();
-                            Globals.hanaConn.ConnectionString = Globals.hanaDevConnStr;
-                            Globals.isHanaConn = new bool();
-                            Globals.isHanaConn = true;
-                            break;
-                        case ("QAGis"):
-                            Globals.sqlConn.ConnectionString = Globals.gisQaConnStr;
-                            break;
-                        case ("QAHana"):
-                            Globals.hanaConn = new HanaConnection();
-                            Globals.hanaConn.ConnectionString = Globals.hanaQaConnStr;
-                            Globals.isHanaConn = new bool();
-                            Globals.isHanaConn = true;
-                            break;
-                        case ("ProdGis"):
-                            //Globals.ConnectionString = Globals.gisProdConnStr;
-                            break;
-                        case ("ProdHana"):
-                            //Globals.hanaConn.ConnectionString = Globals.hanaProdConnStr;
-                            break;
+                        Globals.isHanaConn = new bool();
+
                     }
+                    if (Globals.hanaConn == null)
+                    {
+                        Globals.hanaConn = new HanaConnection();
+                    }
+                    if (Globals.hanaConn.State == System.Data.ConnectionState.Open)
+                    {
+                        Globals.hanaConn.Close();
+                    }
+                    string sss= lstEnvNames[item.Text];
+                    bool ext = lstEnvNames.TryGetValue(item.Text, out sss);
+                    if (ext)
+                    {
+                        
+                        Globals.hanaConn.ConnectionString = sss;
+                        Globals.isHanaConn = true;
+                    }
+
+                    //switch (item.Text)
+                    //{
+
+                    //    case ("DevGis"):
+                    //        Globals.sqlConn.ConnectionString = Globals.gisDevConnStr;
+                    //        break;
+                    //    case ("DevHana"):
+                    //        Globals.hanaConn = new HanaConnection();
+                    //        Globals.hanaConn.ConnectionString = Globals.hanaDevConnStr;
+                    //        Globals.isHanaConn = new bool();
+                    //        Globals.isHanaConn = true;
+                    //        break;
+                    //    case ("QAGis"):
+                    //        Globals.sqlConn.ConnectionString = Globals.gisQaConnStr;
+                    //        break;
+                    //    case ("QAHana"):
+                    //        Globals.hanaConn = new HanaConnection();
+                    //        Globals.hanaConn.ConnectionString = Globals.hanaQaConnStr;
+                    //        Globals.isHanaConn = new bool();
+                    //        Globals.isHanaConn = true;
+                    //        break;
+                    //    case ("ProdGis"):
+                    //        //Globals.ConnectionString = Globals.gisProdConnStr;
+                    //        break;
+                    //    case ("ProdHana"):
+                    //        //Globals.hanaConn.ConnectionString = Globals.hanaProdConnStr;
+                    //        break;
+                    //}
                 }
                 catch (HanaException ex)
                 {
@@ -94,6 +151,7 @@ namespace SapHanaAddIn
     {
         protected override void OnClick()
         {
+
             ConnectToDB();
         }
        private static Task ConnectToDB()
@@ -108,7 +166,7 @@ namespace SapHanaAddIn
                         return;
                     }
 
-                    else if (Globals.isHanaConn)
+                    else if ((bool)Globals.isHanaConn)
                     {
 
                         if (Globals.hanaConn.State == System.Data.ConnectionState.Closed)
@@ -127,11 +185,12 @@ namespace SapHanaAddIn
 
                         if (wrapper != null)
                         {
-                            wrapper.Caption = "Connected";
-                           
-
-
-
+                            wrapper.Caption = "Connected";                          
+                        }
+                        IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
+                        if (wrapper2 != null)
+                        {
+                            wrapper2.Caption = "Connected";
                         }
                     }
                     else if (Globals.isHanaConn == false)
@@ -177,6 +236,7 @@ namespace SapHanaAddIn
                     const string GEF_TABLE = "sap.gef.data::gef_geom_3857.point";
 
                     HanaConnection _conn = new HanaConnection("Server=sapqe1hana:31015;UserID=jluostarinen;Password=Sap2018!");
+                    
                     _conn.Open();
                     HanaDataAdapter dataAdapter = new HanaDataAdapter(
                     "SELECT GEF_OBJKEY AS \"Gefobjnr\" FROM  \"" + SCHEMA + "\".\"" + GEF_TABLE + "\"",_conn);

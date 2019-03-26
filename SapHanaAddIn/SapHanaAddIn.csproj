@@ -100,6 +100,7 @@
     <AddInContent Include="DarkImages\AddInDesktop32.png" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Daml.cs" />
     <Compile Include="Globals.cs" />
     <Compile Include="HanaConfigModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -132,6 +133,9 @@
     <AddInContent Include="Images\VersionChange32.png" />
     <AddInContent Include="Images\VersionConflictsWindow16.png" />
     <AddInContent Include="Images\VersionConflictsWindow32.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="HannaConnections.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--
