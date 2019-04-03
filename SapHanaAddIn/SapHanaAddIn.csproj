@@ -143,6 +143,8 @@
     <Content Include="HANAServers\HannaConnections.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <AddInContent Include="Images\SAPHANA16.png" />
+    <AddInContent Include="Images\SAPHANA.png" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="HanaProperties.xaml">
