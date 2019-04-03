@@ -191,6 +191,7 @@ namespace HANATableViewer
             this.cboQuickPicks.Size = new System.Drawing.Size(112, 21);
             this.cboQuickPicks.Sorted = true;
             this.cboQuickPicks.TabIndex = 3;
+            this.cboQuickPicks.Visible = false;
             // 
             // label1
             // 
@@ -200,6 +201,7 @@ namespace HANATableViewer
             this.label1.Size = new System.Drawing.Size(62, 13);
             this.label1.TabIndex = 8;
             this.label1.Text = "Quick Pick:";
+            this.label1.Visible = false;
             // 
             // label3
             // 
@@ -248,7 +250,7 @@ namespace HANATableViewer
             this.Controls.Add(this.label2);
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "HANA Data  Explorer";
+            this.Text = "SAP HANA Data  Explorer";
             ((System.ComponentModel.ISupportInitialize)(this.dgResults)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

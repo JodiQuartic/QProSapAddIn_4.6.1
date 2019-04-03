@@ -19,13 +19,16 @@ using System.Windows.Input;
 using ArcGIS.Core.Geometry;
 using System.Xml;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
+using System.Security;
 
 namespace SapHanaAddIn
 {
     
     public class cboEnv : ComboBox
     {
-        //static Dictionary<string, string> conProps { get { return lstEnvNames; } set { lstEnvNames = value;  } }
+        public static Dictionary<string, string> conProps { get { return lstEnvNames; } set { lstEnvNames = value;  } }
         private static Dictionary<string, string> lstEnvNames = new Dictionary<string, string>();
         //public Dictionary<string, string> lstEnvNames = new Dictionary<string, string>();
         private static cboEnv comboBox;
@@ -34,7 +37,14 @@ namespace SapHanaAddIn
         {
             setEnvs(this);
             cboBox = this;
+            
         }
+        protected override void OnDropDownOpened()
+        {
+            setEnvs(this);
+            base.OnDropDownOpened();
+        }
+
 
 
         public static async void setEnvs(cboEnv cmb)
@@ -42,44 +52,48 @@ namespace SapHanaAddIn
             await QueuedTask.Run(() =>
             {
 
-                var assembly = Assembly.GetExecutingAssembly();
-                //var resourceName = "Quartic.SapHanaAddIn.HannaConnections.xml";
-                string resourceName2 = assembly.GetManifestResourceNames().Single(str => str.EndsWith("HannaConnections.xml"));
-                //List<string> lstEnvNames = new List<string>();
-                
-                XmlDocument xmlDoc = new XmlDocument();
-                using (Stream stream = assembly.GetManifestResourceStream(resourceName2))
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    string result = reader.ReadToEnd();
-
-                    xmlDoc.LoadXml(result);
-                }
-                foreach (XmlNode nose in xmlDoc.DocumentElement.ChildNodes)
-                {
-
-                    lstEnvNames.Add(nose.ChildNodes[0].InnerText.Trim(),"Server=" + nose.ChildNodes[1].InnerText.Trim() + ";UserID=" + nose.ChildNodes[2].InnerText.Trim() +";Password=" + nose.ChildNodes[3].InnerText.Trim());
-                }
-                //XmlDataDocument xmldoc = new XmlDataDocument();
-                //FileStream fs = new FileStream("HannaConnections.xml", FileMode.Open, FileAccess.Read);
-
-
-
-
-
-                //lstEnvNames.Add("DevGis");
-                //lstEnvNames.Add("DevHana");
-                //lstEnvNames.Add("QAGis");
-
-                foreach (KeyValuePair<string,string> item in lstEnvNames)
+                cmb.Clear();
+                foreach (KeyValuePair<string, string> item in HanaConfigModule.Current.environmrnts)
                 {
                     cmb.Add(new ComboBoxItem(item.Key.ToString()));
                 }
-                //foreach (string name in lstEnvNames)
+                
+                ////string contentPath = System.IO.Path.Combine( AddinAssemblyLocation(), "HANAServers", "HannaConnections.xml");
+                //string contentPath;
+                //HanaConfigModule.Current.Settings.TryGetValue("Setting1", out contentPath);
+                ////var assembly = Assembly.GetExecutingAssembly();
+                //////var resourceName = "Quartic.SapHanaAddIn.HannaConnections.xml";
+                ////string resourceName2 = assembly.GetManifestResourceNames().Single(str => str.EndsWith("HannaConnections.xml"));
+                //////List<string> lstEnvNames = new List<string>();
+
+                //XmlDocument xmlDoc = new XmlDocument();
+                ////using (Stream stream = assembly.GetManifestResourceStream(resourceName2))
+
+                //using (StreamReader reader = new StreamReader(contentPath))
                 //{
-                //    cmb.Add(new ComboBoxItem(name));
+                //    string result = reader.ReadToEnd();
+
+                //    xmlDoc.LoadXml(result);
                 //}
+                //foreach (XmlNode nose in xmlDoc.DocumentElement.ChildNodes)
+                //{
+
+                //    lstEnvNames.Add(nose.ChildNodes[0].InnerText.Trim(),"Server=" + nose.ChildNodes[1].InnerText.Trim() + ";UserID=" + nose.ChildNodes[2].InnerText.Trim() +";Password=");
+                //}
+
+                //foreach (KeyValuePair<string,string> item in lstEnvNames)
+                //{
+                //    cmb.Add(new ComboBoxItem(item.Key.ToString()));
+                //}
+
             });
+        }
+        public static string AddinAssemblyLocation()
+        {
+            var asm = System.Reflection.Assembly.GetExecutingAssembly();
+            return System.IO.Path.GetDirectoryName(
+                              Uri.UnescapeDataString(
+                                      new Uri(asm.CodeBase).LocalPath));
         }
         protected override async void OnSelectionChange(ComboBoxItem item)
         {
@@ -87,27 +101,7 @@ namespace SapHanaAddIn
             {
                 try
                 {
-                    if (Globals.isHanaConn == null)
-                    {
-                        Globals.isHanaConn = new bool();
 
-                    }
-                    if (Globals.hanaConn == null)
-                    {
-                        Globals.hanaConn = new HanaConnection();
-                    }
-                    if (Globals.hanaConn.State == System.Data.ConnectionState.Open)
-                    {
-                        Globals.hanaConn.Close();
-                    }
-                    string sss= lstEnvNames[item.Text];
-                    bool ext = lstEnvNames.TryGetValue(item.Text, out sss);
-                    if (ext)
-                    {
-                        
-                        Globals.hanaConn.ConnectionString = sss;
-                        Globals.isHanaConn = true;
-                    }
 
                     //switch (item.Text)
                     //{
@@ -160,50 +154,138 @@ namespace SapHanaAddIn
             {
                 try
                 {
+                    HanaPropertiesViewModel ass = new HanaPropertiesViewModel();
+                    HanaPropertiesView dd = new HanaPropertiesView();
+                    string fff = ass.ModuleSetting2;
+                    HanaConfigModule sds = HanaConfigModule.Current;
+                    //sds.
+                    if (Globals.isHanaConn == null)
+                    {
+                        Globals.isHanaConn = new bool();
+
+                    }
                     if (Globals.hanaConn == null)
                     {
-                        MessageBox.Show("Select an environment first.", "No environment is selected.");
-                        return;
-                    }
 
-                    else if ((bool)Globals.isHanaConn)
+                        Globals.hanaConn = new HanaConnection();
+                    }
+                    if (Globals.hanaConn.State == System.Data.ConnectionState.Open)
                     {
-
-                        if (Globals.hanaConn.State == System.Data.ConnectionState.Closed)
-                        {
-                            Globals.hanaConn.Open();
-                        }
-                        else
-                        {
-                            Globals.hanaConn.Close();
-                            Globals.hanaConn.Open();
-                        }
-
-                        //cboEnv.cboBox.Caption = "ReConnect";
-                        IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
-
-
-                        if (wrapper != null)
-                        {
-                            wrapper.Caption = "Connected";                          
-                        }
-                        IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
-                        if (wrapper2 != null)
-                        {
-                            wrapper2.Caption = "Connected";
-                        }
+                        Globals.hanaConn.Close();
                     }
+                    ComboBoxItem item = (ComboBoxItem)cboEnv.cboBox.SelectedItem;
+                    string sss = item.Text;
+
+                    //bool ext = cboEnv.conProps.TryGetValue(item.Text, out sss);
+                    bool ext = HanaConfigModule.Current.environmrnts.TryGetValue(item.Text, out sss);
+                    HanaConfigModule config = HanaConfigModule.Current;
+                    //IDictionary<string, string> sett = config.Settings;
+                    //string len;
+                    //sett.TryGetValue("Setting3", out len);
+                    //byte[] inBuffer = new byte[int.Parse(len)];
+                    //byte[] outBuffer;
+                    //string pass = "";
+                    //using (FileStream fStream = new FileStream("Data.dat", FileMode.Open))
+                    //{
+                    //    if (fStream.CanRead)
+                    //    {
+                    //        fStream.Read(inBuffer, 0, int.Parse(len));
+                    //        byte[] entropy = new byte[20];
+                    //        outBuffer = ProtectedData.Unprotect(inBuffer, null, DataProtectionScope.CurrentUser);
+                    //        pass = UnicodeEncoding.ASCII.GetString(outBuffer);
+                    //    }
+                    //}                        
+
+
+                    if (ext)
+                    {
+                        Globals.hanaConn.ConnectionString = sss; //+ pass;
+                        Globals.isHanaConn = true;
+                        //Globals.hanaConn.ConnectionString = string.Concat(sss, pass);
+                        SecureString ss = new SecureString();
+                        ss = HanaConfigModule.Current.Hpass;
+                        ss.MakeReadOnly();
+                        //foreach (char cc in pass)
+                        //{
+                        //    ss.AppendChar(cc);
+                        //}
+                        //ss.MakeReadOnly();
+                        //Globals.hanaConn.ConnectionString = "Server = sapqe2hana.ad.sannet.gov:30015; UserID = jluostarinen; Password = Sap2018!";
+                        //HanaCredential hcr = new HanaCredential("jluostarinen", ss);
+                        string user;
+                        if (HanaConfigModule.Current.Settings.TryGetValue("Setting2",out user))
+                        {
+                            HanaCredential hcr = new HanaCredential(user, ss);
+                            Globals.hanaConn.Credential = hcr;
+                        } 
+
+                    }
+                    
+                    Globals.hanaConn.Open();
+
+                    //if (Globals.hanaConn == null)
+                    //{
+                    //    MessageBox.Show("Select an environment first.", "No environment is selected.");
+                    //    return;
+                    //}
+
+                    //else if ((bool)Globals.isHanaConn)
+                    //{
+
+                    //    if (Globals.hanaConn.State == System.Data.ConnectionState.Closed)
+                    //    {
+                    //        Globals.hanaConn.Open();
+                    //    }
+                    //    else
+                    //    {
+                    //        Globals.hanaConn.Close();
+                    //        Globals.hanaConn.Open();
+                    //    }
+
+                    //cboEnv.cboBox.Caption = "ReConnect";
+
+                    //}
+                    //}
+                    IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
+
+
+                    if (wrapper != null)
+                    {
+                        wrapper.Caption = "Connected";
+                    }
+                    IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
+                    if (wrapper2 != null)
+                    {
+                        wrapper2.Caption = "Currently connected to: " + item.Text;
+                    }
+                    IPlugInWrapper wrapper3 = FrameworkApplication.GetPlugInWrapper("lblHasConnTrue");
+                    if (wrapper3 != null)
+                    {
+                        wrapper3.Caption = "Currently connected to: " + item.Text;
+                        wrapper3.Checked = false;
+
+                    }
+
+
                     else if (Globals.isHanaConn == false)
                     {
 
                     }
 
                 }
+
                  catch (HanaException ex)
                 {
-                    MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
-                     ex.Errors[0].NativeError.ToString() + ")",
-                     "Failed to open Connection");
+                    if (ex.Message== "authentication failed")
+                    {
+                        MessageBox.Show("authentication failed. Please reset you password in the Hanna Settings of ArcGIS PRo Options ");
+                    }
+                    else
+                    {
+                        MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +  ex.Errors[0].NativeError.ToString() + ")", "Failed to open Connection");
+                    }
+
+                    
                 }
             });
         }
@@ -337,6 +419,7 @@ namespace SapHanaAddIn
                 var mapPoint = MapView.Active.ClientToMap(e.ClientPoint);
             });
         }
+
 
     }
 

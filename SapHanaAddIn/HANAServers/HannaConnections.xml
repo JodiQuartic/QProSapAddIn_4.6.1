@@ -10,9 +10,7 @@
     <UserID>
       jluostarinen
     </UserID>
-    <Password>
-      Sap2019!
-    </Password>
+
   </Connection>
   <Connection>
     <Name>
@@ -24,8 +22,6 @@
     <UserID>
       jluostarinen
     </UserID>
-    <Password>
-      Sap2018!
-    </Password>
+
   </Connection>
 </Connections>
