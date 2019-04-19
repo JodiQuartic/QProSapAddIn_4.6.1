@@ -103,6 +103,7 @@
     <AddInContent Include="DarkImages\AddInDesktop32.png" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConnectionItem.cs" />
     <Compile Include="Daml.cs" />
     <Compile Include="Globals.cs" />
     <Compile Include="HanaConfigModule.cs" />
@@ -165,11 +166,6 @@
   </ItemGroup>
   <ItemGroup>
     <AddInContent Include="DarkImages\GenericButtonPurple32.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="HANAServers\Data.dat">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--

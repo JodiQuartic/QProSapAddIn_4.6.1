@@ -112,12 +112,29 @@ namespace SapHanaAddIn
                     base.IsModified = true;
             }
         }
+
+        private List<ConnectionItem> _Connection;
+        public List<ConnectionItem> Connections
+        {
+            get { return _Connection; }
+            set
+            {
+                if (SetProperty(ref _Connection, value, () => Connections))
+                {
+                    base.IsModified = true;
+                }
+            }
+        }
+
         /// <summary>
         /// Called when the page loads because to has become visible.
         /// </summary>
         /// <returns>A task that represents the work queued to execute in the ThreadPool.</returns>
         protected override Task InitializeAsync()
         {
+
+            List<ConnectionItem> conitem = HanaConfigModule.Current.ConnectionItems;
+            Connections = conitem;
             Dictionary<string, string> settings = HanaConfigModule.Current.Settings;
 
             // assign to the values biniding to the controls

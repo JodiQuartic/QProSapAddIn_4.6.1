@@ -21,12 +21,13 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="16,8,0,0" Orientation="Horizontal"  >
-            <TextBlock  x:Name="ServerNameLable" Text="XML File" VerticalAlignment="Center" Style="{DynamicResource Esri_TextBlockDialog}"/>
-            <TextBox  x:Name="ServerName" HorizontalAlignment="Left" Height="23" Margin="22,0,0,0" TextWrapping="Wrap" Text="{Binding ModuleSetting1, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="220"/>
-            <Button x:Name="btnSelectFile" Content="Slect File" Width="75" Margin="15,0,0,0" Click="btnSelectFile_Click"/>
+            <TextBlock  x:Name="ServerNameLable" Text="Enter the connection details for each server you would like to connect to" VerticalAlignment="Center" Style="{DynamicResource Esri_TextBlockDialog}"/>
+            <!--<TextBox  x:Name="ServerName" HorizontalAlignment="Left" Height="23" Margin="22,0,0,0" TextWrapping="Wrap" Text="{Binding ModuleSetting1, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="220"/>
+            <Button x:Name="btnSelectFile" Content="Slect File" Width="75" Margin="15,0,0,0" Click="btnSelectFile_Click"/>-->
         </StackPanel>
 
         <StackPanel Grid.Row="1" Margin="16,8,0,0" Orientation="Horizontal">
@@ -37,6 +38,25 @@
             <TextBlock  Text="Password" VerticalAlignment="Center" Style="{DynamicResource Esri_TextBlockDialog}"/>
             <PasswordBox   x:Name="HANNApasswordBox"  HorizontalAlignment="Left" Margin="22,0,0,0" VerticalAlignment="Top" Width="120" RenderTransformOrigin="0.5,0.5" PasswordChar="*" PasswordChanged="PasswordBox_PasswordChanged" />
         </StackPanel>
+        <StackPanel  Grid.Row="3" Margin="16,8,0,0" Orientation="Vertical" Height="200" Width="300">
+            <DataGrid Name="dgConnections"  AddingNewItem="dgConnections_AddingNewItem" ItemsSource="{Binding Connections, Mode=TwoWay,NotifyOnSourceUpdated=True,UpdateSourceTrigger=PropertyChanged,BindsDirectlyToSource=True}"  Height="auto" Width="auto" AlternatingRowBackground = "LightBlue" AlternationCount = "2" CanUserAddRows="True" CanUserDeleteRows="True" AutoGenerateColumns="False" CellEditEnding="dgConnections_CellEditEnding"  >
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Binding="{Binding name}"   />
+                    <DataGridTextColumn Header="Sever/Port" Binding="{Binding server}" />
+                    <DataGridTextColumn Header="UserID" Binding="{Binding userid}" />
+                    <DataGridTemplateColumn Header="Pass"  >
+                        <DataGridTemplateColumn.CellTemplate >
+                            <DataTemplate >
+                                <PasswordBox PasswordChanged="PasswordBox_PasswordChanged_1"   >
+                                    
+                                </PasswordBox>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+       
         <!-- Replace text block below with your UI components. -->
 
     </Grid>

@@ -53,10 +53,16 @@ namespace SapHanaAddIn
             {
 
                 cmb.Clear();
-                foreach (KeyValuePair<string, string> item in HanaConfigModule.Current.environmrnts)
+                //foreach (KeyValuePair<string, string> item in HanaConfigModule.Current.environmrnts)
+                //{
+                //    cmb.Add(new ComboBoxItem(item.Key.ToString()));
+                //}
+
+                foreach (ConnectionItem  item in HanaConfigModule.Current.ConnectionItems)
                 {
-                    cmb.Add(new ComboBoxItem(item.Key.ToString()));
+                    cmb.Add(new ComboBoxItem(item.name, item));
                 }
+                
                 
                 ////string contentPath = System.IO.Path.Combine( AddinAssemblyLocation(), "HANAServers", "HannaConnections.xml");
                 //string contentPath;
@@ -102,7 +108,7 @@ namespace SapHanaAddIn
                 try
                 {
 
-
+                    FrameworkApplication.State.Activate("drew_condition_state");
                     //switch (item.Text)
                     //{
 
@@ -154,6 +160,11 @@ namespace SapHanaAddIn
             {
                 try
                 {
+                    if (cboEnv.cboBox.SelectedItem == null)
+                    {
+                        FrameworkApplication.State.Deactivate("drew_condition_state");
+                        return;
+                    }
                     HanaPropertiesViewModel ass = new HanaPropertiesViewModel();
                     HanaPropertiesView dd = new HanaPropertiesView();
                     string fff = ass.ModuleSetting2;
@@ -173,12 +184,21 @@ namespace SapHanaAddIn
                     {
                         Globals.hanaConn.Close();
                     }
+
                     ComboBoxItem item = (ComboBoxItem)cboEnv.cboBox.SelectedItem;
                     string sss = item.Text;
-
+                    ConnectionItem connitem = item.Icon as ConnectionItem;
+                    Globals.hanaConn.ConnectionString = "Server=" + connitem.server;
+                    Globals.isHanaConn = true;
+                    SecureString ss = new SecureString();
+                    ss = connitem.pass;
+                    ss.MakeReadOnly();
+                    HanaCredential hcr = new HanaCredential(connitem.userid, ss);
+                    Globals.hanaConn.Credential = hcr;
+                    Globals.hanaConn.Open();
                     //bool ext = cboEnv.conProps.TryGetValue(item.Text, out sss);
-                    bool ext = HanaConfigModule.Current.environmrnts.TryGetValue(item.Text, out sss);
-                    HanaConfigModule config = HanaConfigModule.Current;
+                    //bool ext = HanaConfigModule.Current.environmrnts.TryGetValue(item.Text, out sss);
+                    //HanaConfigModule config = HanaConfigModule.Current;
                     //IDictionary<string, string> sett = config.Settings;
                     //string len;
                     //sett.TryGetValue("Setting3", out len);
@@ -197,31 +217,31 @@ namespace SapHanaAddIn
                     //}                        
 
 
-                    if (ext)
-                    {
-                        Globals.hanaConn.ConnectionString = sss; //+ pass;
-                        Globals.isHanaConn = true;
-                        //Globals.hanaConn.ConnectionString = string.Concat(sss, pass);
-                        SecureString ss = new SecureString();
-                        ss = HanaConfigModule.Current.Hpass;
-                        ss.MakeReadOnly();
-                        //foreach (char cc in pass)
-                        //{
-                        //    ss.AppendChar(cc);
-                        //}
-                        //ss.MakeReadOnly();
-                        //Globals.hanaConn.ConnectionString = "Server = sapqe2hana.ad.sannet.gov:30015; UserID = jluostarinen; Password = Sap2018!";
-                        //HanaCredential hcr = new HanaCredential("jluostarinen", ss);
-                        string user;
-                        if (HanaConfigModule.Current.Settings.TryGetValue("Setting2",out user))
-                        {
-                            HanaCredential hcr = new HanaCredential(user, ss);
-                            Globals.hanaConn.Credential = hcr;
-                        } 
+                    //if (ext)
+                    //{
+                    //    Globals.hanaConn.ConnectionString = sss; //+ pass;
+                    //    Globals.isHanaConn = true;
+                    //    //Globals.hanaConn.ConnectionString = string.Concat(sss, pass);
+                    //    SecureString ss = new SecureString();
+                    //    ss = HanaConfigModule.Current.Hpass;
+                    //    ss.MakeReadOnly();
+                    //    //foreach (char cc in pass)
+                    //    //{
+                    //    //    ss.AppendChar(cc);
+                    //    //}
+                    //    //ss.MakeReadOnly();
+                    //    //Globals.hanaConn.ConnectionString = "Server = sapqe2hana.ad.sannet.gov:30015; UserID = jluostarinen; Password = Sap2018!";
+                    //    //HanaCredential hcr = new HanaCredential("jluostarinen", ss);
+                    //    string user;
+                    //    if (HanaConfigModule.Current.Settings.TryGetValue("Setting2",out user))
+                    //    {
+                    //        HanaCredential hcr = new HanaCredential(user, ss);
+                    //        Globals.hanaConn.Credential = hcr;
+                    //    } 
 
-                    }
-                    
-                    Globals.hanaConn.Open();
+                    //}
+
+                    //Globals.hanaConn.Open();
 
                     //if (Globals.hanaConn == null)
                     //{
@@ -246,6 +266,7 @@ namespace SapHanaAddIn
 
                     //}
                     //}
+                    FrameworkApplication.State.Activate("drew_condition_state_isconnected");
                     IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
 
 

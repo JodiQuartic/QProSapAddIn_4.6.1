@@ -4,7 +4,7 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
   xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
   
-    <AddInInfo id="{9981ecfc-db03-4ff9-9f1f-19c092cfecc7}" version="1.0" desktopVersion="2.3.15769">
+  <AddInInfo id="{9981ecfc-db03-4ff9-9f1f-19c092cfecc7}" version="1.0" desktopVersion="2.3.15769">
     <Name>SapHanaAddIn</Name>
     <Description>SapHanaAddIn description</Description>
     <Image>Images\AddinDesktop32.png</Image>
@@ -15,6 +15,14 @@
     <!-- Note subject can be one or more of these topics:
                     Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
   </AddInInfo>
+  <conditions>
+    <insertCondition id="drew_condition" caption="HANA Connections">
+      <state id="drew_condition_state"/>
+    </insertCondition>
+    <insertCondition id="drew_condition_isconnected" caption="Are we connected">
+      <state id="drew_condition_state_isconnected"/>
+    </insertCondition>
+  </conditions>
   <modules>
     <insertModule id="SapHanaAddIn_Config" className="HanaConfigModule" autoLoad="true" caption="Hana Config Settings">
       <tabs>
@@ -42,7 +50,7 @@
         <subgroup id="sub_Grp1" size="MediumThenSmallWhenSmall" verticalAlignment="Center">
           <comboBox refID="cboEnv" />
           <button refID="btnConnect" />
-          <labelControl refID="lblHasConn" />
+          <!--<labelControl refID="lblHasConn" />-->
         </subgroup>
       </subgroups>
       <controls>
@@ -54,8 +62,16 @@
             Toggles the Visibility and Selectability by Asset Group.<disabledText /></tooltip>
         </comboBox>
         <button id="btnSAPFind" keytip="Locate SAP Object" caption="Find" className="btnSAPFind" loadOnClick="true" smallImage="Images\Find16.png" largeImage="Images\Find32.png" />
-        <button id="btnConnect" keytip="Connect To DB" caption="Connect" className="btnConnect" loadOnClick="true" smallImage="Images\AddInDesktop16.png" largeImage="Images\AddInDesktop32.png" />
-        <button id="btnSqlExplorer" keytip="Explore DB using Sql" caption="Explore" className="btnSqlExplorer" loadOnClick="true" smallImage="Images\SAPHANA16.png" largeImage="Images\SAPHANA.png" />
+        <button id="btnConnect"  condition="drew_condition" keytip="Connect To DB"  caption="Connect" className="btnConnect" loadOnClick="true" smallImage="Images\AddInDesktop16.png" largeImage="Images\AddInDesktop32.png" >
+          <tooltip heading ="Connect To the selected HANA DB">
+            <disabledText>Pick a HANA DB from the dropdown. </disabledText>
+          </tooltip>
+        </button>
+        <button id="btnSqlExplorer" condition="drew_condition_isconnected" keytip="Explore DB using Sql" caption="Explore" className="btnSqlExplorer" loadOnClick="true" smallImage="Images\SAPHANA16.png" largeImage="Images\SAPHANA.png">
+          <tooltip heading="Explore DB using Sql">
+            <disabledText>You must connect to a HANA DB first</disabledText>
+          </tooltip>
+        </button>
         <button id="btnSAPIdentify" keytip="Display SAP Orders for asset" caption="Identify" className="btnSAPIdentify" loadOnClick="true" smallImage="Images\IdentifyTool.png" largeImage="Images\IdentifyTool32.png" />
         <button id="btnAddViewToMap" keytip="Add SAP View" caption="Add View" className="btnAddViewToMap" loadOnClick="true" smallImage="Images\AddContent16.png" largeImage="Images\AddContent32.png" />
         <button id="btnSAPConflictDetection" keytip="ConflictDetection" caption="Find Conflicts" className="btnConflictDetection" loadOnClick="true" smallImage="Images\VersionChange16.png" largeImage="Images\VersionChange32.png" />

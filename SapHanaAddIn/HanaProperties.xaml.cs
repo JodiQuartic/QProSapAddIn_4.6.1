@@ -2,9 +2,11 @@
 using ArcGIS.Desktop.Framework;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -25,6 +27,7 @@ namespace SapHanaAddIn
     /// </summary>
     public partial class HanaPropertiesView : UserControl
     {
+        public ObservableCollection<ConnectionItem> MyColl { get; set; }
         public HanaPropertiesView()
         {
             InitializeComponent();
@@ -37,6 +40,7 @@ namespace SapHanaAddIn
             { ((dynamic)this.DataContext).SecurePassword = ((PasswordBox)sender).SecurePassword; }
             HanaConfigModule.Current.Hpass = ((PasswordBox)sender).SecurePassword;
             Project.Current.SetDirty(true);
+
             //string theString = new NetworkCredential("", ((PasswordBox)sender).SecurePassword).Password;
             //if (this.DataContext != null)
             //{ ((dynamic)this.DataContext).ModuleSetting3 = theString; }
@@ -51,55 +55,108 @@ namespace SapHanaAddIn
 
                 
             }
-            
+
+            //dgConnections.ItemsSource = MyColl;
+
+
         }
 
-        private void btnSelectFile_Click(object sender, RoutedEventArgs e)
+        //private void btnSelectFile_Click(object sender, RoutedEventArgs e)
+        //{
+        //    Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+
+
+
+        //    // Set filter for file extension and default file extension 
+        //    dlg.DefaultExt = ".xml";
+        //    dlg.Filter = "xml Files (*.xml)|*.xml";
+
+
+        //    // Display OpenFileDialog by calling ShowDialog method 
+        //    Nullable<bool> result = dlg.ShowDialog();
+
+
+        //    // Get the selected file name and display in a TextBox 
+        //    if (result == true)
+        //    {
+        //        // Open document d
+        //        string filename = dlg.FileName;
+        //        ServerName.Text = filename;
+        //    }
+
+        //    string contentPath;
+        //    HanaConfigModule.Current.Settings.TryGetValue("Setting1", out contentPath);
+        //    XmlDocument xmlDoc = new XmlDocument();
+        //    using (StreamReader reader = new StreamReader(ServerName.Text))
+        //    {
+        //        string xmlinput = reader.ReadToEnd();
+        //        xmlDoc.LoadXml(xmlinput);
+        //    }
+        //    HanaConfigModule.Current.environmrnts.Clear();
+        //    try
+        //    {
+        //        foreach (XmlNode nose in xmlDoc.DocumentElement.ChildNodes)
+        //        {
+        //            //HanaConfigModule.Current.environmrnts.Add(nose.ChildNodes[0].InnerText.Trim(), "Server=" + nose.ChildNodes[1].InnerText.Trim() + ";UserID=" + nose.ChildNodes[2].InnerText.Trim() + ";Password=");
+        //            HanaConfigModule.Current.environmrnts.Add(nose.ChildNodes[0].InnerText.Trim(), "Server=" + nose.ChildNodes[1].InnerText.Trim() );
+        //        }
+        //    }
+        //    catch (Exception)
+        //    {
+
+        //        MessageBox.Show("There was a problem reading the xml file. Please make sure it is in the right format");
+        //    }
+
+
+        //}
+
+        private void dgConnections_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
         {
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-
-
-
-            // Set filter for file extension and default file extension 
-            dlg.DefaultExt = ".xml";
-            dlg.Filter = "xml Files (*.xml)|*.xml";
-
-
-            // Display OpenFileDialog by calling ShowDialog method 
-            Nullable<bool> result = dlg.ShowDialog();
-
-
-            // Get the selected file name and display in a TextBox 
-            if (result == true)
+            if (e.Column.Header.ToString() == "pass")
             {
-                // Open document d
-                string filename = dlg.FileName;
-                ServerName.Text = filename;
+                //DataGrid dg = (DataGrid)sender;
+                //foreach (ConnectionItem item in dg.Items)
+                //{
+
+                //}
+                e.Cancel = true;
             }
-
-            string contentPath;
-            HanaConfigModule.Current.Settings.TryGetValue("Setting1", out contentPath);
-            XmlDocument xmlDoc = new XmlDocument();
-            using (StreamReader reader = new StreamReader(ServerName.Text))
+            else
             {
-                string xmlinput = reader.ReadToEnd();
-                xmlDoc.LoadXml(xmlinput);
+                e.Cancel = true;
             }
-            HanaConfigModule.Current.environmrnts.Clear();
-            try
+            
+
+        }
+
+        private void PasswordBox_PasswordChanged_1(object sender, RoutedEventArgs e)
+        {
+            if (this.DataContext != null)
+            { ((dynamic)this.DataContext).SecurePassword = ((PasswordBox)sender).SecurePassword; }
+            HanaConfigModule.Current.Hpass = ((PasswordBox)sender).SecurePassword;
+            var oo = e.Source;
+            ConnectionItem sss= dgConnections.CurrentItem as ConnectionItem;
+
+            HanaConfigModule.Current.ConnectionItems[dgConnections.SelectedIndex].pass = ((PasswordBox)sender).SecurePassword;
+            foreach (ConnectionItem  item in HanaConfigModule.Current.ConnectionItems)
             {
-                foreach (XmlNode nose in xmlDoc.DocumentElement.ChildNodes)
+                ConnectionItem ss = (ConnectionItem)dgConnections.CurrentItem;
+                if (item.name == ss.name)
                 {
-                    //HanaConfigModule.Current.environmrnts.Add(nose.ChildNodes[0].InnerText.Trim(), "Server=" + nose.ChildNodes[1].InnerText.Trim() + ";UserID=" + nose.ChildNodes[2].InnerText.Trim() + ";Password=");
-                    HanaConfigModule.Current.environmrnts.Add(nose.ChildNodes[0].InnerText.Trim(), "Server=" + nose.ChildNodes[1].InnerText.Trim() );
+                    item.pass = ((PasswordBox)sender).SecurePassword;
                 }
-            }
-            catch (Exception)
-            {
+            } 
+            Project.Current.SetDirty(true);
+        }
 
-                MessageBox.Show("There was a problem reading the xml file. Please make sure it is in the right format");
-            }
+        private void dgConnections_AddingNewItem(object sender, AddingNewItemEventArgs e)
+        {
+            Project.Current.SetDirty(true);
+        }
 
+        private void dgConnections_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            Project.Current.SetDirty(true);
 
         }
     }
