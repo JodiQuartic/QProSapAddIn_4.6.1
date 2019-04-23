@@ -8,6 +8,9 @@ using Sap.Data.Hana;
 using Sap.Data;
 using SapHanaAddIn;
 using System.Threading.Tasks;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
+using System.Windows.Input;
+using ArcGIS.Desktop.Framework;
 
 namespace HANATableViewer
 {
@@ -91,6 +94,12 @@ namespace HANATableViewer
                 {
                     components.Dispose();
                 }
+            }
+            FrameworkApplication.State.Deactivate("drew_condition_state_isconnected");
+            IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
+            if (wrapper2 != null)
+            {
+                wrapper2.Caption = "Connect";
             }
             base.Dispose(disposing);
         }
@@ -287,55 +296,61 @@ namespace HANATableViewer
 
             try
             {
-                dgResults.DataSource = null;
 
-                HanaCommand cmd = new HanaCommand(txtSQLStatement.Text.Trim(), Globals.hanaConn);
-                cmd.CommandText = "select COLUMN_NAME from TABLE_COLUMNS where schema_name like '" + comboBoxSchemas.SelectedItem.ToString() + "' and table_name = '" + comboBoxTables.SelectedItem.ToString() + "' and data_type_id != 29812";
-                
-                
-                //HanaParameter parm1 = new HanaParameter();
-                cmd.Prepare();
-                
-                HanaDataReader dr = cmd.ExecuteReader();
-                string colls = "";
-                char[] charsToTrim = { ',', ' ' };
-                if (dr != null)
-                {
-                    while (dr.Read())
-                    {
-                        colls = colls + dr.GetString(0) + ",";
-                    }
-                    
-                }
-                colls = colls.TrimEnd(charsToTrim);
-                dr.Close();
+                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+                   dgResults.DataSource = null;
+
+                   HanaCommand cmd = new HanaCommand(txtSQLStatement.Text.Trim(), Globals.hanaConn);
+                   cmd.CommandText = "select COLUMN_NAME from TABLE_COLUMNS where schema_name like '" + comboBoxSchemas.SelectedItem.ToString() + "' and table_name = '" + comboBoxTables.SelectedItem.ToString() + "' and data_type_id != 29812";
 
 
+                   //HanaParameter parm1 = new HanaParameter();
+                   cmd.Prepare();
+
+                   HanaDataReader dr = cmd.ExecuteReader();
+                   string colls = "";
+                   char[] charsToTrim = { ',', ' ' };
+                   if (dr != null)
+                   {
+                       while (dr.Read())
+                       {
+                           colls = colls + dr.GetString(0) + ",";
+                       }
+
+                   }
+                   colls = colls.TrimEnd(charsToTrim);
+                   dr.Close();
 
 
-                cmd.CommandText = "SELECT " + colls + " FROM \"" + comboBoxSchemas.SelectedItem.ToString() + "\".\"" + comboBoxTables.SelectedItem.ToString() +"\"";
-                dr = cmd.ExecuteReader();
-                dgResults.DataSource = null;
-                dgResults.Refresh();
-                if (dr != null)
-                {
-                    dgResults.DataSource = dr;
-                    dr.Close();
-                }
+
+
+                   cmd.CommandText = "SELECT " + colls + " FROM \"" + comboBoxSchemas.SelectedItem.ToString() + "\".\"" + comboBoxTables.SelectedItem.ToString() + "\"";
+                   dr = cmd.ExecuteReader();
+                   dgResults.DataSource = null;
+                   dgResults.Refresh();
+                   if (dr != null)
+                   {
+                       dgResults.DataSource = dr;
+                       dr.Close();
+                   }
+
+                Mouse.OverrideCursor = null;
             }
             catch (HanaException ex)
             {
                 MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
                 ex.Errors[0].NativeError.ToString() + ")",
                 "Failed to execute SQL statement");
+                Mouse.OverrideCursor = null;
             }
-
+            Mouse.OverrideCursor = null;
             txtSQLStatement.SelectAll();
             txtSQLStatement.Focus();
         }
 
         private void btnClose_Click(object sender, System.EventArgs e)
         {
+            Globals.hanaConn.Close();
             this.Close();
         }
 
