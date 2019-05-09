@@ -315,8 +315,14 @@ namespace SapHanaAddIn
     {
         protected override void OnClick()
         {
-            System.Windows.Forms.Form tv = new HANATableViewer.Form1();
-            tv.Show();
+            TableViewerPanelViewModel.Show();
+            //System.Windows.Forms.Form tv = new HANATableViewer.Form1();
+            ////tv.Focus();
+            //tv.Activate();
+
+            //tv.Show();
+
+
 
             //tv.Activate();
         }

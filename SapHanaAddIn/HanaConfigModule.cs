@@ -95,6 +95,13 @@ namespace SapHanaAddIn
             set { _ConnectionItems = value; }
         }
 
+        private List<string> _hanatables = new List<string>();
+        internal List<string> HanaTables
+        {
+            get { return _hanatables; }
+            set { _hanatables = value; }
+        }
+
         #region Overrides
         /// <summary>
         /// Called by Framework when ArcGIS Pro is closing

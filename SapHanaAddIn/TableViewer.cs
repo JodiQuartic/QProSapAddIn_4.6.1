@@ -11,6 +11,11 @@ using System.Threading.Tasks;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using System.Windows.Input;
 using ArcGIS.Desktop.Framework;
+using ArcGIS.Desktop.Mapping;
+using ArcGIS.Core.Data;
+using ArcGIS.Core.CIM;
+using Microsoft.Win32;
+using System.Collections.Generic;
 
 namespace HANATableViewer
 {
@@ -21,7 +26,7 @@ namespace HANATableViewer
     public class Form1 : System.Windows.Forms.Form
     {
         public System.Windows.Forms.Label label2;
-        public System.Windows.Forms.TextBox txtSQLStatement;
+        public TextBox txtSQLStatement;
         public System.Windows.Forms.TextBox txtUserID;
         public System.Windows.Forms.Button btnExecute;
         public System.Windows.Forms.DataGrid dgResults;
@@ -32,7 +37,8 @@ namespace HANATableViewer
         private Label label3;
         private Label label4;
         public ComboBox comboBoxSchemas;
-
+        private Button btnAdd;
+        private string spatialCol = "";
         /// <summary>
         /// Required designer variable.
         /// </summary>
@@ -123,6 +129,7 @@ namespace HANATableViewer
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.comboBoxSchemas = new System.Windows.Forms.ComboBox();
+            this.btnAdd = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dgResults)).BeginInit();
             this.SuspendLayout();
             // 
@@ -136,6 +143,7 @@ namespace HANATableViewer
             // 
             // txtSQLStatement
             // 
+            this.txtSQLStatement.AcceptsReturn = true;
             this.txtSQLStatement.AcceptsTab = true;
             this.txtSQLStatement.Location = new System.Drawing.Point(7, 81);
             this.txtSQLStatement.Multiline = true;
@@ -144,6 +152,8 @@ namespace HANATableViewer
             this.txtSQLStatement.Size = new System.Drawing.Size(684, 68);
             this.txtSQLStatement.TabIndex = 2;
             this.txtSQLStatement.Text = "SELECT * FROM ";
+            this.txtSQLStatement.TextChanged += new System.EventHandler(this.txtSQLStatement_TextChanged);
+            this.txtSQLStatement.KeyUp += new System.Windows.Forms.KeyEventHandler(this.txtSQLStatement_KeyUp);
             // 
             // txtUserID
             // 
@@ -240,12 +250,23 @@ namespace HANATableViewer
             this.comboBoxSchemas.TabIndex = 11;
             this.comboBoxSchemas.SelectedIndexChanged += new System.EventHandler(this.comboBoxSchemas_SelectedIndexChanged);
             // 
+            // btnAdd
+            // 
+            this.btnAdd.Location = new System.Drawing.Point(13, 155);
+            this.btnAdd.Name = "btnAdd";
+            this.btnAdd.Size = new System.Drawing.Size(90, 23);
+            this.btnAdd.TabIndex = 12;
+            this.btnAdd.Text = "Add to TOC";
+            this.btnAdd.UseVisualStyleBackColor = true;
+            this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
+            // 
             // Form1
             // 
             this.AcceptButton = this.btnExecute;
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
             this.CancelButton = this.btnClose;
             this.ClientSize = new System.Drawing.Size(703, 510);
+            this.Controls.Add(this.btnAdd);
             this.Controls.Add(this.comboBoxSchemas);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
@@ -260,6 +281,7 @@ namespace HANATableViewer
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "SAP HANA Data  Explorer";
+            this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dgResults)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -294,37 +316,52 @@ namespace HANATableViewer
                 return;
             }
 
+            string qtest = qtest = txtSQLStatement.Text; 
+            if (spatialCol != "")
+            {
+                if(txtSQLStatement.Text.IndexOf(spatialCol) >0)
+                {
+                    qtest = txtSQLStatement.Text.Replace(spatialCol, spatialCol + ".st_aswkt()");
+                }
+                else
+                {
+                    qtest = txtSQLStatement.Text;
+                }
+            }
+            HanaCommand cmd = new HanaCommand(qtest, Globals.hanaConn);
+
+            HanaDataReader dr = null;
             try
             {
-
+                
                 Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
                    dgResults.DataSource = null;
 
-                   HanaCommand cmd = new HanaCommand(txtSQLStatement.Text.Trim(), Globals.hanaConn);
-                   cmd.CommandText = "select COLUMN_NAME from TABLE_COLUMNS where schema_name like '" + comboBoxSchemas.SelectedItem.ToString() + "' and table_name = '" + comboBoxTables.SelectedItem.ToString() + "' and data_type_id != 29812";
+                   
+                   ////cmd.CommandText = "select COLUMN_NAME from TABLE_COLUMNS where schema_name like '" + comboBoxSchemas.SelectedItem.ToString() + "' and table_name = '" + comboBoxTables.SelectedItem.ToString() + "' and data_type_id != 29812";
 
 
-                   //HanaParameter parm1 = new HanaParameter();
-                   cmd.Prepare();
+                   ////HanaParameter parm1 = new HanaParameter();
+                   //cmd.Prepare();
 
-                   HanaDataReader dr = cmd.ExecuteReader();
-                   string colls = "";
-                   char[] charsToTrim = { ',', ' ' };
-                   if (dr != null)
-                   {
-                       while (dr.Read())
-                       {
-                           colls = colls + dr.GetString(0) + ",";
-                       }
+                   
+                   //string colls = "";
+                   //char[] charsToTrim = { ',', ' ' };
+                   //if (dr != null)
+                   //{
+                   //    while (dr.Read())
+                   //    {
+                   //        colls = colls + dr.GetString(0) + ",";
+                   //    }
 
-                   }
-                   colls = colls.TrimEnd(charsToTrim);
-                   dr.Close();
-
-
+                   //}
+                   //colls = colls.TrimEnd(charsToTrim);
+                   //dr.Close();
 
 
-                   cmd.CommandText = "SELECT " + colls + " FROM \"" + comboBoxSchemas.SelectedItem.ToString() + "\".\"" + comboBoxTables.SelectedItem.ToString() + "\"";
+
+
+                   //cmd.CommandText = "SELECT " + colls + " FROM \"" + comboBoxSchemas.SelectedItem.ToString() + "\".\"" + comboBoxTables.SelectedItem.ToString() + "\"";
                    dr = cmd.ExecuteReader();
                    dgResults.DataSource = null;
                    dgResults.Refresh();
@@ -341,6 +378,11 @@ namespace HANATableViewer
                 MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
                 ex.Errors[0].NativeError.ToString() + ")",
                 "Failed to execute SQL statement");
+                if (dr != null)
+                {
+                    dr.Close();
+                }
+                
                 Mouse.OverrideCursor = null;
             }
             Mouse.OverrideCursor = null;
@@ -356,14 +398,34 @@ namespace HANATableViewer
 
         private void comboBoxTables_SelectedIndexChanged(object sender, EventArgs e)
         {
-            txtSQLStatement.Text = "SELECT * FROM " + comboBoxTables.SelectedItem.ToString();
+            //cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + comboBoxSchemas.SelectedItem.ToString() + "' and table_name = '" + comboBoxTables.SelectedItem.ToString() + "' and data_type_id != 29812";
+            //HanaCommand cmd = new HanaCommand("select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + comboBoxSchemas.SelectedItem.ToString() + "' and table_name = '" + comboBoxTables.SelectedItem.ToString() + "' and data_type_id != 29812", Globals.hanaConn);
+            HanaCommand cmd = new HanaCommand("select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + comboBoxSchemas.SelectedItem.ToString() + "' and table_name = '" + comboBoxTables.SelectedItem.ToString() + "'", Globals.hanaConn);
+            HanaDataReader dr = cmd.ExecuteReader();
+            List<string> colls = new List<string>() ;
+            while (dr.Read())
+            {
+                colls.Add(dr.GetString(0));
+
+            }
+            dr.Close();
+            txtSQLStatement.Text = "SELECT TOP 1000 " + string.Join(", ",colls.ToArray() )+ " FROM \"" + comboBoxSchemas.SelectedItem.ToString()+ "\".\"" + comboBoxTables.SelectedItem.ToString() + "\"";
+            spatialCol = "";
+            cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + comboBoxSchemas.SelectedItem.ToString() + "' and table_name = '" + comboBoxTables.SelectedItem.ToString() + "' and data_type_id = 29812";
+            dr = cmd.ExecuteReader();
+            while (dr.Read())
+            {
+                spatialCol = dr.GetString(0);
+
+            }
+            dr.Close();
         }
 
         private void comboBoxSchemas_SelectedIndexChanged(object sender, EventArgs e)
         {
             HanaCommand cmd = new HanaCommand("SELECT schema_name,table_name FROM sys.tables where schema_name = '" + comboBoxSchemas.SelectedItem.ToString() +"'", Globals.hanaConn);
             //HanaCommand cmd = new HanaCommand("select * from schemas", Globals.hanaConn);
-
+            //HanaCommand cmd = new HanaCommand(txtSQLStatement.Text, Globals.hanaConn);
             HanaDataReader dr = cmd.ExecuteReader();
             comboBoxTables.Items.Clear();
             while (dr.Read())
@@ -372,6 +434,135 @@ namespace HANATableViewer
                 comboBoxTables.Items.Add(dr.GetString(1));
             }
             dr.Close();
+        }
+
+        private void btnAdd_Click(object sender, EventArgs e)
+        {
+             
+
+
+
+            if (MapView.Active != null)
+            {
+                Task sssss = OpenEnterpriseGeodatabase();
+                return;
+            }
+            else
+            {
+                MessageBox.Show("Please activate a map");
+            }
+            
+        }
+        public async Task OpenEnterpriseGeodatabase()
+        {
+            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() => {
+                // Opening a Non-Versioned SQL Server instance.
+                RegistryKey reg = (Registry.LocalMachine).OpenSubKey("Software");
+                reg = reg.OpenSubKey("ODBC");
+                reg = reg.OpenSubKey("ODBC.INI");
+                reg = reg.OpenSubKey("ODBC Data Sources");
+                string instance = "";
+                foreach (string item in reg.GetValueNames())
+                {
+                    instance = item;
+                    string vvv = reg.GetValue(item).ToString();
+                }
+
+                IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("cboEnv");
+
+                //ArcGIS.Desktop.Framework.Contracts.ComboBox ddd = (ArcGIS.Desktop.Framework.Contracts.ComboBox)wrapper;
+                ArcGIS.Desktop.Framework.Contracts.ComboBoxItem item2 = (ArcGIS.Desktop.Framework.Contracts.ComboBoxItem)cboEnv.cboBox.SelectedItem;
+                // = ddd.Text;
+                ConnectionItem connitem = item2.Icon as ConnectionItem;
+                string tst2 = new System.Net.NetworkCredential(string.Empty, connitem.pass).Password;
+                DatabaseConnectionProperties connectionProperties = new DatabaseConnectionProperties(EnterpriseDatabaseType.Hana)
+                {
+                    AuthenticationMode = AuthenticationMode.DBMS,
+
+                    // Where testMachine is the machine where the instance is running and testInstance is the name of the SqlServer instance.
+                    Instance = cboEnv.cboBox.Text, //@"sapqe2hana",
+
+                    // Provided that a database called LocalGovernment has been created on the testInstance and geodatabase has been enabled on the database.
+                    //Database = "LocalGovernment",
+
+                    // Provided that a login called gdb has been created and corresponding schema has been created with the required permissions.
+                    User = connitem.userid,//  "jluostarinen",
+                    Password = tst2,
+                    Version = "dbo.DEFAULT"
+                };
+
+                using (Geodatabase geodatabase = new Geodatabase(connectionProperties))
+
+                {
+                    Connector pCon = geodatabase.GetConnector();
+                    pCon.ToString();
+                    // Use the geodatabase
+                }
+                using (Database db = new Database(connectionProperties))
+                {
+                    string spatialquery = "";
+                    //"Select * from 'JLUOSTARINEN'.'Points'", "MySelect"
+                    //QueryDescription qds = db.GetQueryDescription("Select * from \"JLUOSTARINEN\".\"TESTCREATEFC\"", "MySelect");
+                    if (spatialCol != "")
+                    {
+                        spatialquery = txtSQLStatement.Text.Insert(txtSQLStatement.Text.IndexOf("SELECT") + 7, spatialCol + ", ");
+                    }
+                    else
+                    {
+                        spatialquery = txtSQLStatement.Text;
+                    }
+                    QueryDescription qds = db.GetQueryDescription(txtSQLStatement.Text, "MySelect");// " select GEF_OBJECTID, GEF_OBJKEY, OBJNR, ERNAM, ERDAT, KTEXT, IDAT2, AENAM, ARTPR, GEF_SHAPE from JLUOSTARINEN.ORDERSWLINE", "MySelect");
+                    qds.SetObjectIDFields("OBJECTID");
+                    Table pTab = db.OpenTable(qds);
+                    //string workspaceConnectionString = db.GetConnectionString();
+                    var serverConnection = new CIMInternetServerConnection { URL = "Fill in the URL of the WMS service" };
+                    var connt = new CIMWMTSServiceConnection
+                    {
+                        ServerConnection = serverConnection,
+                        
+
+                    };
+                    CIMStandardDataConnection dataConnection = new CIMStandardDataConnection();
+                    CIMWMTSServiceConnection sd = new CIMWMTSServiceConnection();
+                    sd.ServerConnection = new serverc
+
+                    //dataConnection.WorkspaceConnectionString = workspaceConnectionString;
+
+                    //dataConnection.WorkspaceFactory = WorkspaceFactory.OLEDB;
+                    //dataConnection.DatasetType = esriDatasetType.esriDTFeatureClass;
+                    //dataConnection.Dataset = "JLUOSTARINEN.ORDERSWLINE";
+                    if (qds.IsSpatialQuery())
+                    {
+                        FeatureLayer pFL = (FeatureLayer)LayerFactory.Instance.CreateLayer(pTab.GetDataConnection(), MapView.Active.Map, 0);
+                        //MapView.Active.RedrawAsync(true);
+                        pFL.Select(null, SelectionCombinationMethod.New);
+                        MapView.Active.ZoomToSelected();
+                        pFL.ClearSelection();
+                        pFL.QueryExtent();
+                    }
+                    else
+                    {
+                        //Table ptab = (Table )LayerFactory.Instance.
+                    }
+                    
+                   
+                }
+            });
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtSQLStatement_TextChanged(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void txtSQLStatement_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
+        {
+            e.Handled = true;
         }
     }
 }

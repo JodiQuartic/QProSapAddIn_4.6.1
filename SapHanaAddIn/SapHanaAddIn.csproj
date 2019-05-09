@@ -92,6 +92,7 @@
       <HintPath>C:\Program Files\ArcGIS\Pro\bin\ArcGIS.Desktop.Shared.Wpf.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
     <AddInContent Include="Config.daml">
@@ -113,9 +114,14 @@
     <Compile Include="HanaPropertiesViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RibbonControls.cs" />
+    <Compile Include="HanaTables.cs" />
     <Compile Include="TableViewer.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="TableViewerPanel.xaml.cs">
+      <DependentUpon>TableViewerPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="TableViewerPanelViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="DarkImages\App.ico" />
@@ -151,6 +157,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="HanaProperties.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TableViewerPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
