@@ -115,6 +115,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RibbonControls.cs" />
     <Compile Include="HanaTables.cs" />
+    <Compile Include="SelectionString.cs" />
     <Compile Include="TableViewer.cs">
       <SubType>Form</SubType>
     </Compile>

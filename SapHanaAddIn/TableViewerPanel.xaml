@@ -63,20 +63,29 @@
 
             </StackPanel>
 
-            <TextBox TextWrapping="Wrap" Grid.Row="2" Height="60" Width="auto"  Background="{DynamicResource Esri_BackgroundPressedBrush}" 
-         Foreground="{DynamicResource Esri_TextStyleDefaultBrush}" Text="{Binding QueryTxt, Mode=TwoWay}" ></TextBox>
+            <TextBox Name="txtQueryTXT" TextWrapping="Wrap" Grid.Row="2" Height="60" Width="auto"  Background="{DynamicResource Esri_BackgroundPressedBrush}" 
+         Foreground="{DynamicResource Esri_TextStyleDefaultBrush}" Text="{Binding QueryTxt.SelectString, Mode=OneWay}" ></TextBox>
             <StackPanel Grid.Row="3" Orientation="Horizontal" >
 
-                <Button Grid.Row="0" Grid.Column="1" Height="25" Margin="5" Command="{Binding RetrieveMapsCommand}"
+                <Button Name="btnAddTOC" Grid.Row="0" Grid.Column="1" Height="25" Margin="5" Command="{Binding AddTOC}" Click="btnAddTOC_Click"
                     Style="{DynamicResource Esri_Button}">Add To TOC</Button>
 
-                <Button Grid.Row="0" Grid.Column="1" Height="25" Margin="5" Command="{Binding RetrieveMapsCommand}"
-                    Style="{DynamicResource Esri_Button}">Execute</Button>
-                <Button Grid.Row="0" Grid.Column="1" Height="25" Margin="5" Command="{Binding RetrieveMapsCommand}"
+                <Button Grid.Row="0" Name="btnExecute" Grid.Column="1" Height="25" Margin="5" 
+                    Style="{DynamicResource Esri_Button}" Click="btnExecute_Click">Execute</Button> <!--Command="{Binding ExecuteSelect}"-->
+                <Button Grid.Row="0" Grid.Column="1" Height="25" Margin="5" Name="btnClose" Click="btnClose_Click"
                     Style="{DynamicResource Esri_Button}">Close</Button>
+                <Label Name="lblSpatialCol" Visibility="Visible" Content="{Binding SpatialCol}" />
             </StackPanel>
-            <StackPanel Grid.Row="4">
-                <DataGrid   Name="dgConnections"   ItemsSource="{Binding Results, Mode=OneWay,NotifyOnSourceUpdated=True,UpdateSourceTrigger=PropertyChanged,BindsDirectlyToSource=True}"  Height="auto" Width="auto" AlternatingRowBackground = "LightBlue" AlternationCount = "2"  AutoGenerateColumns="True">
+
+                <DataGrid Grid.Row="4" AutoGenerateColumns="True" Name="dgSelectedResults" 
+                          IsReadOnly="True" MaxHeight="300"
+                          AlternatingRowBackground = "LightBlue" AlternationCount = "2"  
+                          ScrollViewer.CanContentScroll="True"
+                          ScrollViewer.HorizontalScrollBarVisibility="Visible"
+                          ScrollViewer.VerticalScrollBarVisibility="Visible"><!--ItemsSource="{Binding Results, Mode=TwoWay,BindsDirectlyToSource=True}"--> 
+                </DataGrid>
+                
+                <!--<DataGrid   Name="dgConnections"   ItemsSource="{Binding Results, Mode=OneWay,NotifyOnSourceUpdated=True,UpdateSourceTrigger=PropertyChanged,BindsDirectlyToSource=True}"  Height="auto" Width="auto" AlternatingRowBackground = "LightBlue" AlternationCount = "2"  AutoGenerateColumns="True">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="OBJECTID" Binding="{Binding name}"   />
                         <DataGridTextColumn Header="GEF_CHG_DATE" Binding="{Binding server}" />
@@ -90,8 +99,8 @@
                         <DataGridTextColumn Header="SHAPE" Binding="{Binding userid}" />
 
                     </DataGrid.Columns>
-                </DataGrid>
-            </StackPanel>
+                </DataGrid>-->
+
 
         </Grid>
     </Grid>

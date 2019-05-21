@@ -524,7 +524,7 @@ namespace HANATableViewer
                     };
                     CIMStandardDataConnection dataConnection = new CIMStandardDataConnection();
                     CIMWMTSServiceConnection sd = new CIMWMTSServiceConnection();
-                    sd.ServerConnection = new serverc
+                    
 
                     //dataConnection.WorkspaceConnectionString = workspaceConnectionString;
 
