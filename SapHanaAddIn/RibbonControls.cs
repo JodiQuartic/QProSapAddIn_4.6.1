@@ -5,30 +5,20 @@ using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using ArcGIS.Core.CIM;
 using ArcGIS.Desktop.Framework;
-using ArcGIS.Desktop.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Data.SqlClient;
 using System.Windows;
-using ArcGIS.Desktop.Mapping.Events;
 using Sap.Data.Hana;
-using System.IO;
-using System.Windows.Input;
 using ArcGIS.Core.Geometry;
-using System.Xml;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
 using System.Security;
 
 namespace SapHanaAddIn
 {
-    
     public class cboEnv : ComboBox
     {
-        public static Dictionary<string, string> conProps { get { return lstEnvNames; } set { lstEnvNames = value;  } }
+        public static Dictionary<string, string> conProps { get { return lstEnvNames; } set { lstEnvNames = value; } }
         private static Dictionary<string, string> lstEnvNames = new Dictionary<string, string>();
         //public Dictionary<string, string> lstEnvNames = new Dictionary<string, string>();
         private static cboEnv comboBox;
@@ -37,15 +27,15 @@ namespace SapHanaAddIn
         {
             setEnvs(this);
             cboBox = this;
-            
+
         }
         protected override void OnDropDownOpened()
         {
+            FrameworkApplication.State.Deactivate("condition_state_notReady");
+
             setEnvs(this);
             base.OnDropDownOpened();
         }
-
-
 
         public static async void setEnvs(cboEnv cmb)
         {
@@ -58,12 +48,12 @@ namespace SapHanaAddIn
                 //    cmb.Add(new ComboBoxItem(item.Key.ToString()));
                 //}
 
-                foreach (ConnectionItem  item in HanaConfigModule.Current.ConnectionItems)
+                foreach (ConnectionItem item in HanaConfigModule.Current.ConnectionItems)
                 {
                     cmb.Add(new ComboBoxItem(item.name, item));
                 }
-                
-                
+
+
                 ////string contentPath = System.IO.Path.Combine( AddinAssemblyLocation(), "HANAServers", "HannaConnections.xml");
                 //string contentPath;
                 //HanaConfigModule.Current.Settings.TryGetValue("Setting1", out contentPath);
@@ -107,8 +97,7 @@ namespace SapHanaAddIn
             {
                 try
                 {
-
-                    FrameworkApplication.State.Activate("drew_condition_state");
+                    FrameworkApplication.State.Activate("condition_state_hasProps");
                     //switch (item.Text)
                     //{
 
@@ -137,57 +126,33 @@ namespace SapHanaAddIn
                     //        //Globals.hanaConn.ConnectionString = Globals.hanaProdConnStr;
                     //        break;
                     //}
-                }
-                catch (HanaException ex)
-                {
-                    MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
-                     ex.Errors[0].NativeError.ToString() + ")",
-                     "Failed to open Connection" + " " + item.Text);
-                }
-        });
-        }
-    }
-    public class btnConnect : Button
-    {
-        protected override void OnClick()
-        {
-
-            ConnectToDB();
-        }
-       private static Task ConnectToDB()
-        {
-            return QueuedTask.Run(() =>
-            {
-                try
-                {
                     if (cboEnv.cboBox.SelectedItem == null)
                     {
-                        FrameworkApplication.State.Deactivate("drew_condition_state");
+                        FrameworkApplication.State.Deactivate("condition_state_hasProps");
                         return;
                     }
-                    HanaPropertiesViewModel ass = new HanaPropertiesViewModel();
-                    HanaPropertiesView dd = new HanaPropertiesView();
-                    string fff = ass.ModuleSetting2;
-                    HanaConfigModule sds = HanaConfigModule.Current;
-                    //sds.
+
                     if (Globals.isHanaConn == null)
                     {
                         Globals.isHanaConn = new bool();
-
                     }
+
                     if (Globals.hanaConn == null)
                     {
-
                         Globals.hanaConn = new HanaConnection();
                     }
-                    if (Globals.hanaConn.State == System.Data.ConnectionState.Open)
+                    if (Globals.hanaConn != null)
                     {
                         Globals.hanaConn.Close();
                     }
 
-                    ComboBoxItem item = (ComboBoxItem)cboEnv.cboBox.SelectedItem;
-                    string sss = item.Text;
-                    ConnectionItem connitem = item.Icon as ConnectionItem;
+                    HanaPropertiesViewModel ass = new HanaPropertiesViewModel();
+                    HanaPropertiesView dd = new HanaPropertiesView();
+                    string fff = ass.ModuleSetting2;
+                    HanaConfigModule sds = HanaConfigModule.Current;
+                    ComboBoxItem itm = (ComboBoxItem)cboEnv.cboBox.SelectedItem;
+                    string sss = itm.Text;
+                    ConnectionItem connitem = itm.Icon as ConnectionItem;
                     Globals.hanaConn.ConnectionString = "Server=" + connitem.server;
                     Globals.isHanaConn = true;
                     SecureString ss = new SecureString();
@@ -266,7 +231,7 @@ namespace SapHanaAddIn
 
                     //}
                     //}
-                    FrameworkApplication.State.Activate("drew_condition_state_isconnected");
+                    FrameworkApplication.State.Activate("condition_state_isconnected");
                     IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
 
 
@@ -277,177 +242,166 @@ namespace SapHanaAddIn
                     IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
                     if (wrapper2 != null)
                     {
-                        wrapper2.Caption = "Currently connected to: " + item.Text;
+                        wrapper2.Caption = "Connected to " + item.Text;
                     }
                     IPlugInWrapper wrapper3 = FrameworkApplication.GetPlugInWrapper("lblHasConnTrue");
                     if (wrapper3 != null)
                     {
-                        wrapper3.Caption = "Currently connected to: " + item.Text;
+                        wrapper3.Caption = "Connected to " + item.Text;
                         wrapper3.Checked = false;
 
                     }
-
-
                     else if (Globals.isHanaConn == false)
                     {
 
                     }
-
                 }
-
-                 catch (HanaException ex)
-                {
-                    if (ex.Message== "authentication failed")
-                    {
-                        MessageBox.Show("authentication failed. Please reset you password in the Hanna Settings of ArcGIS PRo Options ");
-                    }
-                    else
-                    {
-                        MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +  ex.Errors[0].NativeError.ToString() + ")", "Failed to open Connection");
-                    }
-
-                    
-                }
-            });
-        }
-    }
-    public class btnSqlExplorer : Button
-    {
-        protected override void OnClick()
-        {
-            TableViewerPanelViewModel.Show();
-            //System.Windows.Forms.Form tv = new HANATableViewer.Form1();
-            ////tv.Focus();
-            //tv.Activate();
-
-            //tv.Show();
-
-
-
-            //tv.Activate();
-        }
-    }
-    public class btnAddViewToMap : Button
-    {
-        protected override void OnClick()
-        {
-            AddHanaViewToMap();
-        }
-
-        private static Task AddHanaViewToMap()
-        {
-            return QueuedTask.Run(() =>
-            {
-                try
-                {
-                    //
-                    const string SCHEMA = "SAP_GEF";
-                    const string GEF_TABLE = "sap.gef.data::gef_geom_3857.point";
-
-                    HanaConnection _conn = new HanaConnection("Server=sapqe1hana:31015;UserID=jluostarinen;Password=Sap2018!");
-                    
-                    _conn.Open();
-                    HanaDataAdapter dataAdapter = new HanaDataAdapter(
-                    "SELECT GEF_OBJKEY AS \"Gefobjnr\" FROM  \"" + SCHEMA + "\".\"" + GEF_TABLE + "\"",_conn);
-                       
-                    //"SELECT t.TEXT AS \"Name\", p.PRODUCTID as \"Product ID\", p.CATEGORY as \"Category\"" +
-                    //" FROM \"" + SCHEMA + "\".\"" + PRODUCTS_TABLE + "\" p INNER JOIN \"" + SCHEMA + "\".\"" + TEXT_TABLE + "\" t ON t.TEXTID = p.NAMEID " + "INNER JOIN \"" + SCHEMA + "\".\"" + PARTNER_TABLE + "\" bp ON p.\"SUPPLIERID.PARTNERID\" = bp.PARTNERID", conn);
-                    
-                    //Create a new DataTable and use your adapter to fill the table.
-                    System.Data.DataTable testTable = new System.Data.DataTable();
-                    dataAdapter.Fill(testTable);
-
-                    //really we are dealing with an esri querylayer here.
-                    //but the hana query layer in Pro has lotsa bugs...  so maybe use a copy? and make a featurelayer
-
-                    //how to cast to esri type?
-
-
-                    //create a copy of the hana data as a featurelayer
-                    //var layer = await QueuedTask.Run(() => MapView.Active.Map.Layers[0].GetDefinition() as CIMFeatureLayer);
-                    //var fLayer = await QueuedTask.Run(() => LayerFactory.CreateLayer(polyLayer.FeatureTable.DataConnection, MapView.Active.Map)) as FeatureLayer;
-                    //await QueuedTask.Run(() => fLayer.SetName("My Name"));
-                    //await QueuedTask.Run(() => fLayer.SetDefinition(polyLayer));
-
-
-                    var mapView = MapView.Active;
-                    var map = mapView.Map;
-                    var layer = MapView.Active.Map.Layers[0].GetDefinition() as CIMFeatureLayer;
-
-                    //var fLayer = LayerFactory.CreateLayer(pointLayer.FeatureTable.DataConnection, MapView.Active.Map) as FeatureLayer;
-                    //fLayer.SetName("My Name");
-                    //fLayer.SetDefinition(pointLayer);
-
-
-                    //var v = mapView.Map.StandaloneTables.FirstOrDefault(t => t.Name == Globals.AMPEventsViewTableName);
-                }
-
                 catch (HanaException ex)
                 {
                     MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
                      ex.Errors[0].NativeError.ToString() + ")",
-                     "Failed to initialize");
+                     "Failed to open Connection" + " " + item.Text);
                 }
-
-
             });
         }
-
     }
-    class toolSAPIdentify : MapTool
-    {
-        public toolSAPIdentify()
+        public class btnSqlExplorer : Button
         {
-            IsSketchTool = true;
-            SketchType = SketchGeometryType.Rectangle;
+            protected override void OnClick()
+            {
+                TableViewerPanelViewModel.Show();
+                //System.Windows.Forms.Form tv = new HANATableViewer.Form1();
+                ////tv.Focus();
+                //tv.Activate();
 
-            //To perform a interactive selection or identify in 3D or 2D, sketch must be created in screen coordinates.
-            SketchOutputMode = SketchOutputMode.Screen;
+                //tv.Show();
+
+
+
+                //tv.Activate();
+            }
         }
-        protected override Task<bool> OnSketchCompleteAsync(Geometry geometry)
+        public class btnAddViewToMap : Button
         {
-            return QueuedTask.Run( () => {
-                var mapView = MapView.Active;
-                if (mapView == null)
-                    return true;
+            protected override void OnClick()
+            {
+                AddHanaViewToMap();
+            }
 
-                //Get all the features that intersect the sketch geometry and flash them in the view. 
-                var results = mapView.GetFeatures(geometry);
-                foreach (var item in results)
+            private static Task AddHanaViewToMap()
+            {
+                return QueuedTask.Run(() =>
                 {
-                    FeatureLayer pfl = (FeatureLayer)item.Key;
-                    QueryFilter pQF = new QueryFilter();
-                    pQF.ObjectIDs = item.Value;
-                    RowCursor pCur = pfl.Search(pQF);
-                    while (pCur.MoveNext())
+                    try
                     {
-                        Row prow = pCur.Current;
-                        Feature pfeat = (Feature)prow;
+                        //
+                        const string SCHEMA = "SAP_GEF";
+                        const string GEF_TABLE = "sap.gef.data::gef_geom_3857.point";
 
-                        //prow[0];
-                        //prow[0] = 's';
+                        HanaConnection _conn = new HanaConnection("Server=sapqe1hana:31015;UserID=jluostarinen;Password=Sap2018!");
 
+                        _conn.Open();
+                        HanaDataAdapter dataAdapter = new HanaDataAdapter(
+                        "SELECT GEF_OBJKEY AS \"Gefobjnr\" FROM  \"" + SCHEMA + "\".\"" + GEF_TABLE + "\"", _conn);
+
+                        //"SELECT t.TEXT AS \"Name\", p.PRODUCTID as \"Product ID\", p.CATEGORY as \"Category\"" +
+                        //" FROM \"" + SCHEMA + "\".\"" + PRODUCTS_TABLE + "\" p INNER JOIN \"" + SCHEMA + "\".\"" + TEXT_TABLE + "\" t ON t.TEXTID = p.NAMEID " + "INNER JOIN \"" + SCHEMA + "\".\"" + PARTNER_TABLE + "\" bp ON p.\"SUPPLIERID.PARTNERID\" = bp.PARTNERID", conn);
+
+                        //Create a new DataTable and use your adapter to fill the table.
+                        System.Data.DataTable testTable = new System.Data.DataTable();
+                        dataAdapter.Fill(testTable);
+
+                        //really we are dealing with an esri querylayer here.
+                        //but the hana query layer in Pro has lotsa bugs...  so maybe use a copy? and make a featurelayer
+
+                        //how to cast to esri type?
+
+
+                        //create a copy of the hana data as a featurelayer
+                        //var layer = await QueuedTask.Run(() => MapView.Active.Map.Layers[0].GetDefinition() as CIMFeatureLayer);
+                        //var fLayer = await QueuedTask.Run(() => LayerFactory.CreateLayer(polyLayer.FeatureTable.DataConnection, MapView.Active.Map)) as FeatureLayer;
+                        //await QueuedTask.Run(() => fLayer.SetName("My Name"));
+                        //await QueuedTask.Run(() => fLayer.SetDefinition(polyLayer));
+
+
+                        var mapView = MapView.Active;
+                        var map = mapView.Map;
+                        var layer = MapView.Active.Map.Layers[0].GetDefinition() as CIMFeatureLayer;
+
+                        //var fLayer = LayerFactory.CreateLayer(pointLayer.FeatureTable.DataConnection, MapView.Active.Map) as FeatureLayer;
+                        //fLayer.SetName("My Name");
+                        //fLayer.SetDefinition(pointLayer);
+
+
+                        //var v = mapView.Map.StandaloneTables.FirstOrDefault(t => t.Name == Globals.AMPEventsViewTableName);
                     }
 
-                    //MessageBox.Show(item.Key.ToString());
-                }
-                mapView.FlashFeature(results);
+                    catch (HanaException ex)
+                    {
+                        MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
+                         ex.Errors[0].NativeError.ToString() + ")",
+                         "Failed to initialize");
+                    }
 
-                //Show a message box reporting each layer the number of the features.
-                MessageBox.Show(String.Join("\n", results.Select(kvp => String.Format("{0}: {1}", kvp.Key.Name, kvp.Value.Count()))), "Identify Result");
-                return true;
 
-            });
+                });
+            }
+
         }
-        protected override Task HandleMouseDownAsync(MapViewMouseButtonEventArgs e)
+        class toolSAPIdentify : MapTool
         {
-            return QueuedTask.Run(() =>
+            public toolSAPIdentify()
             {
-                var mapPoint = MapView.Active.ClientToMap(e.ClientPoint);
-            });
+                IsSketchTool = true;
+                SketchType = SketchGeometryType.Rectangle;
+
+                //To perform a interactive selection or identify in 3D or 2D, sketch must be created in screen coordinates.
+                SketchOutputMode = SketchOutputMode.Screen;
+            }
+            protected override Task<bool> OnSketchCompleteAsync(Geometry geometry)
+            {
+                return QueuedTask.Run(() =>
+                {
+                    var mapView = MapView.Active;
+                    if (mapView == null)
+                        return true;
+
+                    //Get all the features that intersect the sketch geometry and flash them in the view. 
+                    var results = mapView.GetFeatures(geometry);
+                    foreach (var item in results)
+                    {
+                        FeatureLayer pfl = (FeatureLayer)item.Key;
+                        QueryFilter pQF = new QueryFilter();
+                        pQF.ObjectIDs = item.Value;
+                        RowCursor pCur = pfl.Search(pQF);
+                        while (pCur.MoveNext())
+                        {
+                            Row prow = pCur.Current;
+                            Feature pfeat = (Feature)prow;
+
+                            //prow[0];
+                            //prow[0] = 's';
+
+                        }
+
+                        //MessageBox.Show(item.Key.ToString());
+                    }
+                    mapView.FlashFeature(results);
+
+                    //Show a message box reporting each layer the number of the features.
+                    MessageBox.Show(String.Join("\n", results.Select(kvp => String.Format("{0}: {1}", kvp.Key.Name, kvp.Value.Count()))), "Identify Result");
+                    return true;
+
+                });
+            }
+            protected override Task HandleMouseDownAsync(MapViewMouseButtonEventArgs e)
+            {
+                return QueuedTask.Run(() =>
+                {
+                    var mapPoint = MapView.Active.ClientToMap(e.ClientPoint);
+                });
+            }
+
+
         }
-
-
     }
-
-}

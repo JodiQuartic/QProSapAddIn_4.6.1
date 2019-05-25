@@ -101,7 +101,7 @@ namespace HANATableViewer
                     components.Dispose();
                 }
             }
-            FrameworkApplication.State.Deactivate("drew_condition_state_isconnected");
+            FrameworkApplication.State.Deactivate("condition_state_isconnected");
             IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
             if (wrapper2 != null)
             {
@@ -492,7 +492,6 @@ namespace HANATableViewer
                 };
 
                 using (Geodatabase geodatabase = new Geodatabase(connectionProperties))
-
                 {
                     Connector pCon = geodatabase.GetConnector();
                     pCon.ToString();
@@ -512,27 +511,25 @@ namespace HANATableViewer
                         spatialquery = txtSQLStatement.Text;
                     }
                     QueryDescription qds = db.GetQueryDescription(txtSQLStatement.Text, "MySelect");// " select GEF_OBJECTID, GEF_OBJKEY, OBJNR, ERNAM, ERDAT, KTEXT, IDAT2, AENAM, ARTPR, GEF_SHAPE from JLUOSTARINEN.ORDERSWLINE", "MySelect");
-                    qds.SetObjectIDFields("OBJECTID");
-                    Table pTab = db.OpenTable(qds);
+
                     //string workspaceConnectionString = db.GetConnectionString();
-                    var serverConnection = new CIMInternetServerConnection { URL = "Fill in the URL of the WMS service" };
-                    var connt = new CIMWMTSServiceConnection
-                    {
-                        ServerConnection = serverConnection,
-                        
-
-                    };
-                    CIMStandardDataConnection dataConnection = new CIMStandardDataConnection();
-                    CIMWMTSServiceConnection sd = new CIMWMTSServiceConnection();
-                    
-
                     //dataConnection.WorkspaceConnectionString = workspaceConnectionString;
-
                     //dataConnection.WorkspaceFactory = WorkspaceFactory.OLEDB;
                     //dataConnection.DatasetType = esriDatasetType.esriDTFeatureClass;
                     //dataConnection.Dataset = "JLUOSTARINEN.ORDERSWLINE";
                     if (qds.IsSpatialQuery())
                     {
+                        qds.SetObjectIDFields("OBJECTID");
+                        Table pTab = db.OpenTable(qds);
+
+                        var serverConnection = new CIMInternetServerConnection { URL = "Fill in the URL of the WMS service" };
+                        var connt = new CIMWMTSServiceConnection
+                        {
+                            ServerConnection = serverConnection,
+                        };
+                        CIMStandardDataConnection dataConnection = new CIMStandardDataConnection();
+                        CIMWMTSServiceConnection sd = new CIMWMTSServiceConnection();
+
                         FeatureLayer pFL = (FeatureLayer)LayerFactory.Instance.CreateLayer(pTab.GetDataConnection(), MapView.Active.Map, 0);
                         //MapView.Active.RedrawAsync(true);
                         pFL.Select(null, SelectionCombinationMethod.New);

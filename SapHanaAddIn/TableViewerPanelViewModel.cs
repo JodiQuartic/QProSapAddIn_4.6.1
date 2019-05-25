@@ -37,6 +37,16 @@ namespace SapHanaAddIn
                 NotifyPropertyChanged("SpatialCol");
             }
         }
+        private string hasspatialCol;
+        public string hasSpatialCol
+        {
+            get { return hasspatialCol; }
+            set
+            {
+                hasspatialCol = value;
+                NotifyPropertyChanged("hasSpatialCol");
+            }
+        }
         protected TableViewerPanelViewModel()
         {
             HTables = new ObservableCollection<HanaTables>();
@@ -147,18 +157,23 @@ namespace SapHanaAddIn
                 }
                 dr.Close();
                 
+                //find if there is a spatial field column
                 //_querytext.Clear();
                 //_querytext.Add( "SELECT TOP 1000 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSelected + "\".\"" + value + "\"");
                 _querytext.SelectString = "";
                 _querytext.SelectString = "SELECT TOP 1000 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSelected + "\".\"" + value + "\"";
                 SpatialCol = "";
+                hasSpatialCol = "";
                 cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSelected + "' and table_name = '" + value + "' and data_type_id = 29812";
                 dr = cmd.ExecuteReader();
                 while (dr.Read())
                 {
                     SpatialCol = dr.GetString(0);
-
                 }
+                if (SpatialCol != "")
+                    hasSpatialCol = "Spatial Field: ";
+                else
+                    hasSpatialCol = "Spatial Field: None";
 
                 dr.Close();
                 _currenttableselected = value;

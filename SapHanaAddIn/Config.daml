@@ -11,33 +11,36 @@
                     Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
   </AddInInfo>
   <conditions>
-    <insertCondition id="drew_condition" caption="HANA Connections">
-      <state id="drew_condition_state" />
+    <insertCondition id="condition_hasProps" caption="HANA Connections">
+      <state id="condition_state_hasProps" />
     </insertCondition>
-    <insertCondition id="drew_condition_isconnected" caption="Are we connected">
-      <state id="drew_condition_state_isconnected" />
+    <insertCondition id="condition_isconnected" caption="Are we connected">
+      <state id="condition_state_isconnected" />
     </insertCondition>
+    <insertCondition id="condition_notReady" caption="Tool coming with next version">
+      <state id="condition_state_notReady" />
+    </insertCondition>
+    
   </conditions>
   <modules>
     <insertModule id="SapHanaAddIn_Config" className="HanaConfigModule" autoLoad="true" caption="Hana Config Settings">
       <tabs>
         <tab id="SapHanaAddIn_Tab1" caption="Hana Tools" keytip="s">
           <group refID="SapHanaAddIn_Grp1" />
-          <!--<group refID="SapHanaAddIn_Grp2" />-->
+          <group refID="SapHanaAddIn_Grp2" />
         </tab>
       </tabs>
       <groups>
         <!-- comment this out if you have no controls on the Addin tab to avoid an empty group-->
         <group id="SapHanaAddIn_Grp1" caption="Hana Connect" appearsOnAddInTab="false" keytip="a">
           <subgroup refID="sub_Grp1" />
-          <button refID="btnSqlExplorer" size="large" />
-          <button refID="SapHanaAddIn_TableViewerPanel_ShowButton" size="large" />
         </group>
         <group id="SapHanaAddIn_Grp2" caption="Hana Tools" appearsOnAddInTab="false" keytip="b">
-          <button refID="btnSAPFind" size="large" />
+          <button refID="btnSqlExplorer" size="large" />
+          <button refID="SapHanaAddIn_TableViewerPanel_ShowButton" size="large" /><button refID="btnSAPFind" size="large" />
           <button refID="btnSAPIdentify" size="large" />
-          <button refID="btnSAPConflictDetection" size="large" />
           <button refID="toolSAPIdentify" size="large" />
+          <button refID="btnSAPConflictDetection" size="large" />
         </group>
       </groups>
       <subgroups>
@@ -45,37 +48,32 @@
         <subgroup id="sub_Grp1" size="MediumThenSmallWhenSmall" verticalAlignment="Center">
           <comboBox refID="cboEnv" />
           <button refID="btnConnect" />
-          <!--<labelControl refID="lblHasConn" />-->
+          <labelControl refID="lblHasConn" />
         </subgroup>
       </subgroups>
       <controls>
         <!-- add your controls here -->
-        <labelControl id="lblHasConn" caption="Not Connected." />
+        <!--labelControl id="lblHasConn" caption="Not Connected." />-->
         <comboBox id="cboEnv" disableIfBusy="true" isEditable="false" className="cboEnv" isReadOnly="true" keytip="SV" itemWidth="120" caption="Environment: ">
-          <tooltip heading="Set Environment">
-            Toggles the Visibility and Selectability by Asset Group.<disabledText /></tooltip>
-        </comboBox>
-        <button id="btnSAPFind" keytip="Locate SAP Object" caption="Find" className="btnSAPFind" loadOnClick="true" smallImage="Images\Find16.png" largeImage="Images\Find32.png" />
-        <button id="btnConnect" condition="drew_condition" keytip="Connect To DB" caption="Connect" className="btnConnect" loadOnClick="true" smallImage="Images\AddInDesktop16.png" largeImage="Images\AddInDesktop32.png">
           <tooltip heading="Connect To the selected HANA DB">
             <disabledText>Pick a HANA DB from the dropdown. </disabledText>
           </tooltip>
+        </comboBox>
+        <button id="btnConnect" condition="condition_hasProps" keytip="Connect To DB" caption=" " className="btnConnect" loadOnClick="true">
         </button>
-        <button id="btnSqlExplorer" condition="drew_condition_isconnected" keytip="Explore DB using Sql" caption="Explore" className="btnSqlExplorer" loadOnClick="true" smallImage="Images\SAPHANA16.png" largeImage="Images\SAPHANA.png">
+        <button id="btnSqlExplorer" condition="condition_isconnected" keytip="Explore DB using Sql" caption="Explore" className="btnSqlExplorer" loadOnClick="true" smallImage="Images\table_view.ico" largeImage="Images\table_view.ico">
           <tooltip heading="Explore DB using Sql">
             <disabledText>You must connect to a HANA DB first</disabledText>
           </tooltip>
         </button>
-        <button id="btnSAPIdentify" keytip="Display SAP Orders for asset" caption="Identify" className="btnSAPIdentify" loadOnClick="true" smallImage="Images\IdentifyTool.png" largeImage="Images\IdentifyTool32.png" />
-        <button id="btnAddViewToMap" keytip="Add SAP View" caption="Add View" className="btnAddViewToMap" loadOnClick="true" smallImage="Images\AddContent16.png" largeImage="Images\AddContent32.png" />
-        <button id="btnSAPConflictDetection" keytip="ConflictDetection" caption="Find Conflicts" className="btnConflictDetection" loadOnClick="true" smallImage="Images\VersionChange16.png" largeImage="Images\VersionChange32.png" />
-        <tool id="toolSAPIdentify" keytip="Idtentify a SAP asset" caption="SAP Assets" className="toolSAPIdentify" loadOnClick="true" smallImage="Images\IdentifyTool.png" largeImage="Images\IdentifyTool32.png" />
-        <!--<button id="SapHanaAddIn_TableViewerPanel_ShowButton" caption="Show TableViewerPanel" className="TableViewerPanel_ShowButton" loadOnClick="true" smallImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonPurple16.png" largeImage="pack://application:,,,/ArcGIS.Desktop.Resources;component/Images/GenericButtonPurple32.png">
-          <tooltip heading="Show Dockpane">Show Dockpane<disabledText /></tooltip>
-        </button>-->
+        <button id="btnSAPFind" condition="condition_notReady" keytip="Locate SAP Object" caption="Find" className="btnSAPFind" loadOnClick="true" smallImage="Images\Find16.png" largeImage="Images\Find32.png" />
+        <button id="btnAddViewToMap" condition="condition_notReady" keytip="Add SAP Layer" caption="Add SAP Layer" className="btnAddViewToMap" loadOnClick="true" smallImage="Images\AddContent16.png" largeImage="Images\AddContent32.png" />
+        <tool id="toolSAPIdentify" condition="condition_notReady" keytip="Display SAP asset" caption="Identify SAP" className="toolSAPIdentify" loadOnClick="true" smallImage="Images\IdentifyTool.png" largeImage="Images\table2_information.png" />
+         <button id="btnSAPIdentify" condition="condition_notReady" keytip="Display GIS asset" caption="Identify GIS" className="btnSAPIdentify" loadOnClick="true" smallImage="Images\IdentifyTool.png" largeImage="Images\environment_information.png" />
+        <button id="btnSAPConflictDetection" condition="condition_notReady" keytip="Select assets from map and compare the data in SAP with data in GIS" caption="Find Conflicts" className="btnConflictDetection" loadOnClick="true" smallImage="Images\VersionChange16.png" largeImage="Images\selection_replace.png" />
       </controls>
       <dockPanes>
-        <dockPane id="SapHanaAddIn_TableViewerPanel" caption="SAP HANA Data  Explorer" className="TableViewerPanelViewModel" dock="group" dockWith="esri_core_contentsDockPane" condition="drew_condition_isconnected">
+        <dockPane id="SapHanaAddIn_TableViewerPanel" caption="SAP HANA Data  Explorer" className="TableViewerPanelViewModel" dock="group" dockWith="esri_core_contentsDockPane" condition="condition_isconnected" width="500">
           <content className="TableViewerPanelView" />
         </dockPane>
       </dockPanes>
@@ -83,7 +81,7 @@
   </modules>
   <propertySheets>
     <updateSheet refID="esri_core_optionsPropertySheet">
-      <insertPage id="SapHanaAddIn_HanaProperties" caption="HanaProperties" className="HanaPropertiesViewModel" group="Project">
+      <insertPage id="SapHanaAddIn_HanaProperties" caption="HANA Properties" className="HanaPropertiesViewModel" group="Project">
         <content className="HanaPropertiesView" />
       </insertPage>
     </updateSheet>

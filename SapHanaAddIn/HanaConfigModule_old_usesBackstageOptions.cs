@@ -11,21 +11,20 @@ using System.Security.Cryptography;
 using System.IO;
 using System.Security;
 using ArcGIS.Desktop.Core;
-using Microsoft.Win32;
-using System.Runtime.InteropServices;
-using System.Data.Odbc;
+
 
 namespace SapHanaAddIn
 {
-    internal class HanaConfigModule : Module
+    internal class HanaConfigModuleOld : Module
     {
-        private static HanaConfigModule _this = null;
+        private static HanaConfigModuleOld _this = null;
 
-        private HanaConfigModule()
+        private HanaConfigModuleOld()
         {
             ProjectOpenedEvent.Subscribe(OnProjectOpen);
             ProjectClosedEvent.Subscribe(OnProjectClose);
         }
+
         private void OnProjectClose(ProjectEventArgs obj)
         {
             hasSettings = false;
@@ -39,88 +38,30 @@ namespace SapHanaAddIn
             }
             FrameworkApplication.State.Deactivate("condition_state_hasProps");
             FrameworkApplication.State.Deactivate("condition_state_isconnected");
+            //ConnectionItem conn = new ConnectionItem();
+            //conn.name = "Drew";
+            //conn.server = "Server";
+            //conn.userid =  "DrewUser";
+            //char[] chars = { 't', 'e', 's', 't' };
+            //SecureString dfd = new SecureString();
+            //foreach (char item in chars)
+            //{
+            //    dfd.AppendChar(item);
+            //}
+            //conn.pass = dfd;
+            //ConnectionItems.Add(conn);
 
-            //get dsn settings from the local odbc settings and use those for the connectionitems
-            //List<string> enumdsn = EnumDsn(); 
-            //ListODBCsources();
+
         }
 
-        //private List<string> EnumDsn()
-        //{
-        //    List<string> list = new List<string>();
-        //    list.AddRange(EnumDsn(Registry.CurrentUser));
-        //    list.AddRange(EnumDsn(Registry.LocalMachine));
-        //    return list;
-        //}
-        
-    //public static class OdbcWrapper
-    //{
-    //    [DllImport("odbc32.dll")]
-    //    public static extern int SQLDataSources(int EnvHandle, int Direction, StringBuilder ServerName, int ServerNameBufferLenIn,
-    //ref int ServerNameBufferLenOut, StringBuilder Driver, int DriverBufferLenIn, ref int DriverBufferLenOut);
-
-    //    [DllImport("odbc32.dll")]
-    //    public static extern int SQLAllocEnv(ref int EnvHandle);
-    //}
-
-    //public void ListODBCsources()
-    //    {
-    //        int envHandle = 0;
-    //        const int SQL_FETCH_NEXT = 1;
-    //        const int SQL_FETCH_FIRST_SYSTEM = 32;
-
-    //        if (OdbcWrapper.SQLAllocEnv(ref envHandle) != -1)
-    //        {
-    //            int ret;
-    //            StringBuilder serverName = new StringBuilder(1024);
-    //            StringBuilder driverName = new StringBuilder(1024);
-    //            StringBuilder serverNode = new StringBuilder(1024);
-    //            int snLen = 0;
-    //            int driverLen = 0;
-    //            int servernodeLen = 0;
-                ////ret = OdbcWrapper.SQLDataSources(envHandle, SQL_FETCH_FIRST_SYSTEM,
-                //            serverName, serverName.Capacity, ref snLen,
-                //            driverName, driverName.Capacity, ref driverLen,
-                //            serverNode, serverNode.Capacity, ref servernodeLen);
-                //while (ret == 0)
-                //{
-                //    if (driverName.ToString() == "HDBODBC")
-                //    {
-                //        System.Windows.Forms.MessageBox.Show(serverName + System.Environment.NewLine + driverName);
-                //        ret = OdbcWrapper.SQLDataSources(envHandle, SQL_FETCH_NEXT, serverName, serverName.Capacity, ref snLen,
-                //                driverName, driverName.Capacity, ref driverLen);
-                //    }
-                //}
-        //    }
-
-        //}
-       
-        //private IEnumerable<string> EnumDsn(RegistryKey rootKey)
-        //{
-        //    RegistryKey regKey = rootKey.OpenSubKey(@"Software\ODBC\ODBC.INI\ODBC Data Sources");
-        //    if (regKey != null)
-        //    {
-        //        foreach (string name in regKey.GetValueNames())
-        //        {
-        //            //string nm = regKey.GetValue(name, "").ToString();
-        //            //RegistryKey regKey = rootKey.OpenSubKey("@" + nm);
-        //            //yield return name;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        //Msgbox("There are no Data Service Names Setup on this machine. You must first setup valid connections to HANA in Microsoft ODBC Administrator. ");
-        //    }
-
-        //}
         /// <summary>
         /// Retrieve the singleton instance to this module here
         /// </summary>
-        public static HanaConfigModule Current
+        public static HanaConfigModuleOld Current
         {
             get
             {
-                return _this ?? (_this = (HanaConfigModule)FrameworkApplication.FindModule("SapHanaAddIn_Config"));
+                return _this ?? (_this = (HanaConfigModuleOld)FrameworkApplication.FindModule("SapHanaAddIn_Config"));
             }
         }
 
@@ -145,6 +86,7 @@ namespace SapHanaAddIn
             get { return _environmrnts; }
             set { _environmrnts = value; }
         }
+
 
         private List<ConnectionItem> _ConnectionItems = new List<ConnectionItem>() ;
         internal List<ConnectionItem > ConnectionItems
@@ -172,6 +114,7 @@ namespace SapHanaAddIn
             return true;
         }
 
+
         private bool hasSettings = false;
         protected override Task OnReadSettingsAsync(ModuleSettingsReader settings)
         {
@@ -185,7 +128,6 @@ namespace SapHanaAddIn
 
             // Settings defined in the Property sheet’s viewmodel.	
             string[] keys = new string[] { "Setting1", "Setting2", "Setting3" };
-
             foreach (string key in keys)
             {
                 object value = settings.Get(key);
@@ -258,11 +200,38 @@ namespace SapHanaAddIn
                 }
             }
 
+            //if (_moduleSettings["Setting1"] != "")
+            //{
+                //string contentPath;
+                //_moduleSettings.TryGetValue("Setting1", out contentPath);
+                //XmlDocument xmlDoc = new XmlDocument();
+
+                //using (StreamReader reader = new StreamReader(contentPath))
+                //{
+                //    string result = reader.ReadToEnd();
+
+                //    xmlDoc.LoadXml(result);
+                //}
+                //foreach (XmlNode nose in xmlDoc.DocumentElement.ChildNodes)
+                //{
+                //    try
+                //    {
+                //        //_environmrnts.Add(nose.ChildNodes[0].InnerText.Trim(), "Server=" + nose.ChildNodes[1].InnerText.Trim() + ";UserID=" + nose.ChildNodes[2].InnerText.Trim() + ";Password=");
+                //        HanaConfigModule.Current.environmrnts.Add(nose.ChildNodes[0].InnerText.Trim(), "Server=" + nose.ChildNodes[1].InnerText.Trim());
+                //    }
+                //    catch (Exception)
+                //    {
+
+                //        return Task.FromResult(0); 
+                //    }
+                   
+                //}
+            //}
+
 
             return Task.FromResult(0);
         }
 
-       
         protected override Task   OnWriteSettingsAsync(ModuleSettingsWriter settings)
         {
             if (ConnectionItems.Count > 0)
@@ -384,7 +353,5 @@ namespace SapHanaAddIn
                               Uri.UnescapeDataString(
                                       new Uri(asm.CodeBase).LocalPath));
         }
-
-
-   }
+    }
 }

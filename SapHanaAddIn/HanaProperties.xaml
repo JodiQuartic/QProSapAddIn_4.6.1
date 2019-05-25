@@ -41,10 +41,10 @@
         <StackPanel  Grid.Row="3" Margin="16,8,0,0" Orientation="Vertical" Height="200" Width="auto">
             <DataGrid Name="dgConnections"  AddingNewItem="dgConnections_AddingNewItem" ItemsSource="{Binding Connections, Mode=TwoWay,NotifyOnSourceUpdated=True,UpdateSourceTrigger=PropertyChanged,BindsDirectlyToSource=True}"  Height="auto" Width="auto" AlternatingRowBackground = "LightBlue" AlternationCount = "2" CanUserAddRows="True" CanUserDeleteRows="True" AutoGenerateColumns="False" CellEditEnding="dgConnections_CellEditEnding"  >
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name" Binding="{Binding name}"   />
-                    <DataGridTextColumn Header="Sever/Port" Binding="{Binding server}" />
-                    <DataGridTextColumn Header="UserID" Binding="{Binding userid}" />
-                    <DataGridTemplateColumn Header="Pass"  >
+                    <DataGridTextColumn Header="Name" Binding="{Binding name}" Width="120"  />
+                    <DataGridTextColumn Header="Sever/Port" Binding="{Binding server}"  Width="120"/>
+                    <DataGridTextColumn Header="UserID" Binding="{Binding userid}" Width="120" />
+                    <DataGridTemplateColumn Header="Pass"  Width="120" >
                         <DataGridTemplateColumn.CellTemplate >
                             <DataTemplate >
                                 <PasswordBox PasswordChanged="PasswordBox_PasswordChanged_1"   >

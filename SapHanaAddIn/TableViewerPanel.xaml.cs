@@ -29,6 +29,7 @@ namespace SapHanaAddIn
     public partial class TableViewerPanelView : UserControl
     {
         public string _spatialcolumn = "";
+        public string _hasspatialcolumn = "";
         public string _QUERYSTring = "";
         public TableViewerPanelView()
         {
@@ -40,8 +41,6 @@ namespace SapHanaAddIn
             
 
         }
-
-
 
         private void btnExecute_Click(object sender, RoutedEventArgs e)
         {
@@ -62,6 +61,7 @@ namespace SapHanaAddIn
 
             string qtest = qtest = txtSQLStatement;
             string spatialCol = lblSpatialCol.Content.ToString();
+            string hasspatialCol = lblhasSpatialCol.Content.ToString();
             if (spatialCol != "")
             {
                 if (txtSQLStatement.IndexOf(spatialCol) > 0)
@@ -103,9 +103,6 @@ namespace SapHanaAddIn
                 //}
                 //colls = colls.TrimEnd(charsToTrim);
                 //dr.Close();
-
-
-
 
                 //cmd.CommandText = "SELECT " + colls + " FROM \"" + comboBoxSchemas.SelectedItem.ToString() + "\".\"" + comboBoxTables.SelectedItem.ToString() + "\"";
                 dr = cmd.ExecuteReader();
@@ -149,6 +146,7 @@ namespace SapHanaAddIn
             if (MapView.Active != null)
             {
                 _spatialcolumn = lblSpatialCol.Content.ToString();
+                _hasspatialcolumn = lblhasSpatialCol.Content.ToString();
                 _QUERYSTring = txtQueryTXT.Text;
                 Task sssss = OpenEnterpriseGeodatabase();
                 return;
@@ -161,99 +159,111 @@ namespace SapHanaAddIn
         public async Task OpenEnterpriseGeodatabase()
         {
             await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() => {
-                // Opening a Non-Versioned SQL Server instance.
-                RegistryKey reg = (Registry.LocalMachine).OpenSubKey("Software");
-                reg = reg.OpenSubKey("ODBC");
-                reg = reg.OpenSubKey("ODBC.INI");
-                reg = reg.OpenSubKey("ODBC Data Sources");
-                string instance = "";
-                foreach (string item in reg.GetValueNames())
-                {
-                    instance = item;
-                    string vvv = reg.GetValue(item).ToString();
-                }
 
-                IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("cboEnv");
-
-                //ArcGIS.Desktop.Framework.Contracts.ComboBox ddd = (ArcGIS.Desktop.Framework.Contracts.ComboBox)wrapper;
-                ArcGIS.Desktop.Framework.Contracts.ComboBoxItem item2 = (ArcGIS.Desktop.Framework.Contracts.ComboBoxItem)cboEnv.cboBox.SelectedItem;
-                // = ddd.Text;
-                ConnectionItem connitem = item2.Icon as ConnectionItem;
-                string tst2 = new System.Net.NetworkCredential(string.Empty, connitem.pass).Password;
-                DatabaseConnectionProperties connectionProperties = new DatabaseConnectionProperties(EnterpriseDatabaseType.Hana)
-                {
-                    AuthenticationMode = AuthenticationMode.DBMS,
-
-                    // Where testMachine is the machine where the instance is running and testInstance is the name of the SqlServer instance.
-                    Instance = cboEnv.cboBox.Text, //@"sapqe2hana",
-
-                    // Provided that a database called LocalGovernment has been created on the testInstance and geodatabase has been enabled on the database.
-                    //Database = "LocalGovernment",
-
-                    // Provided that a login called gdb has been created and corresponding schema has been created with the required permissions.
-                    User = connitem.userid,//  "jluostarinen",
-                    Password = tst2,
-                    Version = "dbo.DEFAULT"
-                };
-
-                using (Geodatabase geodatabase = new Geodatabase(connectionProperties))
-
-                {
-                    Connector pCon = geodatabase.GetConnector();
-                    pCon.ToString();
-                    // Use the geodatabase
-                }
-                using (Database db = new Database(connectionProperties))
-                {
-                    string spatialquery = "";
-                    string spatialCol = _spatialcolumn;// lblSpatialCol.Content.ToString();
-                    string txtSQLStatement = _QUERYSTring;// txtQueryTXT.Text;
-                    //"Select * from 'JLUOSTARINEN'.'Points'", "MySelect"
-                    //QueryDescription qds = db.GetQueryDescription("Select * from \"JLUOSTARINEN\".\"TESTCREATEFC\"", "MySelect");
-                    if (spatialCol != "")
+                try
+                { 
+                    // Opening a Non-Versioned SQL Server instance.
+                    RegistryKey reg = (Registry.LocalMachine).OpenSubKey("Software");
+                    reg = reg.OpenSubKey("ODBC");
+                    reg = reg.OpenSubKey("ODBC.INI");
+                    reg = reg.OpenSubKey("ODBC Data Sources");
+                    string instance = "";
+                    foreach (string item in reg.GetValueNames())
                     {
-                        spatialquery = txtSQLStatement.Insert(txtSQLStatement.IndexOf("SELECT") + 7, spatialCol + ", ");
+                        instance = item;
+                        string vvv = reg.GetValue(item).ToString();
                     }
-                    else
-                    {
-                        spatialquery = txtSQLStatement;
-                    }
-                    QueryDescription qds = db.GetQueryDescription(txtSQLStatement, "MySelect");// " select GEF_OBJECTID, GEF_OBJKEY, OBJNR, ERNAM, ERDAT, KTEXT, IDAT2, AENAM, ARTPR, GEF_SHAPE from JLUOSTARINEN.ORDERSWLINE", "MySelect");
-                    qds.SetObjectIDFields("OBJECTID");
-                    ArcGIS.Core.Data.Table pTab = db.OpenTable(qds);
-                    //string workspaceConnectionString = db.GetConnectionString();
-                    var serverConnection = new CIMInternetServerConnection { URL = "Fill in the URL of the WMS service" };
-                    var connt = new CIMWMTSServiceConnection
-                    {
-                        ServerConnection = serverConnection,
 
+                    IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("cboEnv");
 
+                    //ArcGIS.Desktop.Framework.Contracts.ComboBox ddd = (ArcGIS.Desktop.Framework.Contracts.ComboBox)wrapper;
+                    ArcGIS.Desktop.Framework.Contracts.ComboBoxItem item2 = (ArcGIS.Desktop.Framework.Contracts.ComboBoxItem)cboEnv.cboBox.SelectedItem;
+                    // = ddd.Text;
+                    ConnectionItem connitem = item2.Icon as ConnectionItem;
+                    string tst2 = new System.Net.NetworkCredential(string.Empty, connitem.pass).Password;
+                    DatabaseConnectionProperties connectionProperties = new DatabaseConnectionProperties(EnterpriseDatabaseType.Hana)
+                    {
+                        AuthenticationMode = AuthenticationMode.DBMS,
+
+                        // Where testMachine is the machine where the instance is running and testInstance is the name of the SqlServer instance.
+                        Instance = cboEnv.cboBox.Text, //@"sapqe2hana",
+
+                        // Provided that a database called LocalGovernment has been created on the testInstance and geodatabase has been enabled on the database.
+                        //Database = "LocalGovernment",
+
+                        // Provided that a login called gdb has been created and corresponding schema has been created with the required permissions.
+                        User = connitem.userid,//  "jluostarinen",
+                        Password = tst2,
+                        Version = "dbo.DEFAULT"
                     };
-                    CIMStandardDataConnection dataConnection = new CIMStandardDataConnection();
-                    CIMWMTSServiceConnection sd = new CIMWMTSServiceConnection();
 
-
-                    //dataConnection.WorkspaceConnectionString = workspaceConnectionString;
-
-                    //dataConnection.WorkspaceFactory = WorkspaceFactory.OLEDB;
-                    //dataConnection.DatasetType = esriDatasetType.esriDTFeatureClass;
-                    //dataConnection.Dataset = "JLUOSTARINEN.ORDERSWLINE";
-                    if (qds.IsSpatialQuery())
+                    using (Geodatabase geodatabase = new Geodatabase(connectionProperties))
                     {
-                        FeatureLayer pFL = (FeatureLayer)LayerFactory.Instance.CreateLayer(pTab.GetDataConnection(), MapView.Active.Map, 0);
-                        //MapView.Active.RedrawAsync(true);
-                        pFL.Select(null, SelectionCombinationMethod.New);
-                        MapView.Active.ZoomToSelected();
-                        pFL.ClearSelection();
-                        pFL.QueryExtent();
+                        Connector pCon = geodatabase.GetConnector();
+                        pCon.ToString();
+                        // Use the geodatabase
                     }
-                    else
+                    using (Database db = new Database(connectionProperties))
                     {
-                        //Table ptab = (Table )LayerFactory.Instance.
+                        string spatialquery = "";
+                        string spatialCol = _spatialcolumn;// lblSpatialCol.Content.ToString();
+                        string hasspatialCol = _hasspatialcolumn;
+                        string txtSQLStatement = _QUERYSTring;// txtQueryTXT.Text;
+                                                              //"Select * from 'JLUOSTARINEN'.'Points'", "MySelect"
+                                                              //QueryDescription qds = db.GetQueryDescription("Select * from \"JLUOSTARINEN\".\"TESTCREATEFC\"", "MySelect");
+                        if (spatialCol != "")
+                        {
+                            spatialquery = txtSQLStatement.Insert(txtSQLStatement.IndexOf("SELECT") + 7, spatialCol + ", ");
+                        }
+                        else
+                        {
+                            spatialquery = txtSQLStatement;
+                        }
+                        QueryDescription qds = db.GetQueryDescription(txtSQLStatement, "MySelect");// " select GEF_OBJECTID, GEF_OBJKEY, OBJNR, ERNAM, ERDAT, KTEXT, IDAT2, AENAM, ARTPR, GEF_SHAPE from JLUOSTARINEN.ORDERSWLINE", "MySelect");
+
+                        //dataConnection.WorkspaceConnectionString = workspaceConnectionString;
+                        //dataConnection.WorkspaceFactory = WorkspaceFactory.OLEDB;
+                        //dataConnection.DatasetType = esriDatasetType.esriDTFeatureClass;
+                        //dataConnection.Dataset = "JLUOSTARINEN.ORDERSWLINE";
+                        if (qds.IsSpatialQuery())
+                        {
+                            qds.SetObjectIDFields("OBJECTID");
+                            ArcGIS.Core.Data.Table pTab = db.OpenTable(qds);
+                            //string workspaceConnectionString = db.GetConnectionString();
+                            var serverConnection = new CIMInternetServerConnection { URL = "Fill in the URL of the WMS service" };
+                            var connt = new CIMWMTSServiceConnection
+                            {
+                                ServerConnection = serverConnection,
+                            };
+                            CIMStandardDataConnection dataConnection = new CIMStandardDataConnection();
+                            CIMWMTSServiceConnection sd = new CIMWMTSServiceConnection();
+
+                            FeatureLayer pFL = (FeatureLayer)LayerFactory.Instance.CreateLayer(pTab.GetDataConnection(), MapView.Active.Map, 0);
+                            //MapView.Active.RedrawAsync(true);
+                            pFL.Select(null, SelectionCombinationMethod.New);
+                            MapView.Active.ZoomToSelected();
+                            pFL.ClearSelection();
+                            pFL.QueryExtent();
+                        }
+                        else
+                        {
+                            //Table ptab = (Table )LayerFactory.Instance.
+                        }
                     }
+
 
 
                 }
+                catch (HanaException ex)
+                {
+                    MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
+                    ex.Errors[0].NativeError.ToString() + ")",
+                    "Failed to execute SQL statement");
+                }
+
+
+
+
             });
         }
     }

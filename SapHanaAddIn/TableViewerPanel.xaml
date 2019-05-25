@@ -6,25 +6,25 @@
              xmlns:ui="clr-namespace:SapHanaAddIn"
              xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300"
+             d:DesignHeight="300" d:DesignWidth="500"
              d:DataContext="{Binding Path=ui.TableViewerPanelViewModel}">
-     <UserControl.Resources>
+    <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <extensions:DesignOnlyResourceDictionary Source="pack://application:,,,/ArcGIS.Desktop.Framework;component\Themes\Default.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid Margin="0,0,-190,0">
+    <Grid Margin="1,1,1,1">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <DockPanel Grid.Row="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30">
+        <DockPanel Grid.Row="0" LastChildFill="true" KeyboardNavigation.TabNavigation="Local" Height="30" Width="Auto">
             <TextBlock Grid.Column="1" Text="{Binding Heading}" Style="{DynamicResource Esri_TextBlockDockPaneHeader}">
                 <TextBlock.ToolTip>
-                    <WrapPanel Orientation="Vertical" MaxWidth="300">
+                    <WrapPanel Orientation="Vertical">
                         <!--<TextBlock Text="{Binding Heading}" TextWrapping="Wrap"/>-->
                         <TextBlock Text="" TextWrapping="Wrap"/>
                     </WrapPanel>
@@ -32,6 +32,11 @@
       </TextBlock>
         </DockPanel>
         <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="289*"/>
+                <ColumnDefinition Width="35*"/>
+                <ColumnDefinition Width="174*"/>
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"></RowDefinition>
                 <RowDefinition Height="Auto"></RowDefinition>
@@ -40,8 +45,8 @@
                 <RowDefinition Height="Auto"></RowDefinition>
             </Grid.RowDefinitions>
 
-                <StackPanel Orientation="Horizontal" Grid.Row="0">
-                    <TextBlock HorizontalAlignment="Left" Text="Schemas" Style="{DynamicResource Esri_TextBlockH3}"
+            <StackPanel Orientation="Horizontal" Grid.Row="0" HorizontalAlignment="Left" Width="Auto" Grid.ColumnSpan="3" >
+                <TextBlock HorizontalAlignment="Left" Text="Schemas" Style="{DynamicResource Esri_TextBlockH3}"
                        Margin="10,3,20,3"></TextBlock>
 
                 <ComboBox Width="150" Name="cboSchema" ItemsSource="{Binding Schemas}" SelectedItem="{Binding CurrentSelected}" >
@@ -51,41 +56,43 @@
                 </ComboBox>
                 <TextBlock HorizontalAlignment="Left" Text="Tables" Style="{DynamicResource Esri_TextBlockH3}"
                        Margin="10,3,20,3"></TextBlock>
-                <ComboBox Width="150" Name="cboTables" ItemsSource="{Binding Tables }" SelectedItem="{Binding CurrentTableSelected}"  >
+                <ComboBox Width="Auto" MinWidth="150" Name="cboTables" ItemsSource="{Binding Tables }" SelectedItem="{Binding CurrentTableSelected}"  >
                     <!--<ComboBoxItem>ActiveOrdersPt</ComboBoxItem>
                     <ComboBoxItem>T3_geom</ComboBoxItem>
                     <ComboBoxItem>GEFPOINT</ComboBoxItem>-->
                 </ComboBox>
-                </StackPanel>
+            </StackPanel>
 
-            
-            <StackPanel Orientation="Horizontal" Grid.Row="1">
+
+            <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,0,0,60" Grid.RowSpan="2">
 
             </StackPanel>
 
-            <TextBox Name="txtQueryTXT" TextWrapping="Wrap" Grid.Row="2" Height="60" Width="auto"  Background="{DynamicResource Esri_BackgroundPressedBrush}" 
-         Foreground="{DynamicResource Esri_TextStyleDefaultBrush}" Text="{Binding QueryTxt.SelectString, Mode=OneWay}" ></TextBox>
-            <StackPanel Grid.Row="3" Orientation="Horizontal" >
+            <TextBox Name="txtQueryTXT" TextWrapping="Wrap" Grid.Row="2" Height="60" Width="Auto"  Background="{DynamicResource Esri_BackgroundPressedBrush}" 
+         Foreground="{DynamicResource Esri_TextStyleDefaultBrush}" Text="{Binding QueryTxt.SelectString, Mode=OneWay}" Grid.ColumnSpan="3" ></TextBox>
+            <StackPanel Grid.Row="3" Orientation="Horizontal" Width="Auto" Grid.ColumnSpan="3" RenderTransformOrigin="0.726,0.536">
 
                 <Button Name="btnAddTOC" Grid.Row="0" Grid.Column="1" Height="25" Margin="5" Command="{Binding AddTOC}" Click="btnAddTOC_Click"
                     Style="{DynamicResource Esri_Button}">Add To TOC</Button>
-
                 <Button Grid.Row="0" Name="btnExecute" Grid.Column="1" Height="25" Margin="5" 
-                    Style="{DynamicResource Esri_Button}" Click="btnExecute_Click">Execute</Button> <!--Command="{Binding ExecuteSelect}"-->
-                <Button Grid.Row="0" Grid.Column="1" Height="25" Margin="5" Name="btnClose" Click="btnClose_Click"
-                    Style="{DynamicResource Esri_Button}">Close</Button>
+                    Style="{DynamicResource Esri_Button}" Click="btnExecute_Click">Execute</Button>
+                <Button Grid.Row="0" Name="btnClose" Grid.Column="1" Height="25" Margin="5" 
+                    Style="{DynamicResource Esri_Button}" Click="btnClose_Click">Close</Button>
+                <Label Name="lblhasSpatialCol" Visibility="Visible" Content="{Binding hasSpatialCol}" />
                 <Label Name="lblSpatialCol" Visibility="Visible" Content="{Binding SpatialCol}" />
             </StackPanel>
 
-                <DataGrid Grid.Row="4" AutoGenerateColumns="True" Name="dgSelectedResults" 
-                          IsReadOnly="True" MaxHeight="300"
+            <DataGrid Grid.Row="4" AutoGenerateColumns="True" Name="dgSelectedResults" 
+                          IsReadOnly="True"
+                          Height="Auto" Width="Auto"
                           AlternatingRowBackground = "LightBlue" AlternationCount = "2"  
                           ScrollViewer.CanContentScroll="True"
                           ScrollViewer.HorizontalScrollBarVisibility="Visible"
-                          ScrollViewer.VerticalScrollBarVisibility="Visible"><!--ItemsSource="{Binding Results, Mode=TwoWay,BindsDirectlyToSource=True}"--> 
-                </DataGrid>
-                
-                <!--<DataGrid   Name="dgConnections"   ItemsSource="{Binding Results, Mode=OneWay,NotifyOnSourceUpdated=True,UpdateSourceTrigger=PropertyChanged,BindsDirectlyToSource=True}"  Height="auto" Width="auto" AlternatingRowBackground = "LightBlue" AlternationCount = "2"  AutoGenerateColumns="True">
+                          ScrollViewer.VerticalScrollBarVisibility="Visible" Grid.ColumnSpan="3">
+                <!--ItemsSource="{Binding Results, Mode=TwoWay,BindsDirectlyToSource=True}"-->
+            </DataGrid>
+
+            <!--<DataGrid   Name="dgConnections"   ItemsSource="{Binding Results, Mode=OneWay,NotifyOnSourceUpdated=True,UpdateSourceTrigger=PropertyChanged,BindsDirectlyToSource=True}"  Height="auto" Width="auto" AlternatingRowBackground = "LightBlue" AlternationCount = "2"  AutoGenerateColumns="True">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="OBJECTID" Binding="{Binding name}"   />
                         <DataGridTextColumn Header="GEF_CHG_DATE" Binding="{Binding server}" />

@@ -38,9 +38,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Sap.Data.Hana.v4.5, Version=1.0.112.0, Culture=neutral, PublicKeyToken=0326b8ea63db4bc4, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
+    <Reference Include="Sap.Data.Hana.v4.5, Version=2.3.119.0, Culture=neutral, PublicKeyToken=0326b8ea63db4bc4, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -108,6 +106,7 @@
     <Compile Include="Daml.cs" />
     <Compile Include="Globals.cs" />
     <Compile Include="HanaConfigModule.cs" />
+    <Compile Include="HanaConfigModule_old_usesBackstageOptions.cs" />
     <Compile Include="HanaProperties.xaml.cs">
       <DependentUpon>HanaProperties.xaml</DependentUpon>
     </Compile>
@@ -116,7 +115,7 @@
     <Compile Include="RibbonControls.cs" />
     <Compile Include="HanaTables.cs" />
     <Compile Include="SelectionString.cs" />
-    <Compile Include="TableViewer.cs">
+    <Compile Include="TableViewerOBSEOLETE.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="TableViewerPanel.xaml.cs">
@@ -128,8 +127,9 @@
     <Resource Include="DarkImages\App.ico" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="TableViewer.resx">
-      <DependentUpon>TableViewer.cs</DependentUpon>
+    <EmbeddedResource Include="TableViewerOBSEOLETE.resx">
+      <DependentUpon>TableViewerOBSEOLETE.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
@@ -155,6 +155,12 @@
     </Content>
     <AddInContent Include="Images\SAPHANA16.png" />
     <AddInContent Include="Images\SAPHANA.png" />
+    <AddInContent Include="Images\table_view.ico" />
+    <AddInContent Include="Images\environment_information.png" />
+    <AddInContent Include="Images\environment_view.png" />
+    <AddInContent Include="Images\selection_replace.png" />
+    <AddInContent Include="Images\table2_information.png" />
+    <AddInContent Include="Images\table2_view.png" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="HanaProperties.xaml">
