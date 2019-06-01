@@ -1,33 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using ArcGIS.Core.CIM;
-using ArcGIS.Core.Data;
-using ArcGIS.Core.Geometry;
-using ArcGIS.Desktop.Catalog;
-using ArcGIS.Desktop.Core;
-using ArcGIS.Desktop.Editing;
-using ArcGIS.Desktop.Extensions;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Dialogs;
-using ArcGIS.Desktop.Framework.Threading.Tasks;
-using ArcGIS.Desktop.Mapping;
 using Sap.Data.Hana;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using System.Data;
-using System.Windows.Controls;
 using System.ComponentModel;
 
 namespace SapHanaAddIn
 {
     internal class TableViewerPanelViewModel : DockPane, INotifyPropertyChanged
     {
-        private const string _dockPaneID = "SapHanaAddIn_TableViewerPanel";
+        public const string _dockPaneID = "SapHanaAddIn_TableViewerPanel";
+   
         public ObservableCollection<HanaTables> HTables { get; set; }
+
         private string spatialCol;
         public string SpatialCol
         {
@@ -37,15 +27,52 @@ namespace SapHanaAddIn
                 NotifyPropertyChanged("SpatialCol");
             }
         }
-        private string hasspatialCol;
-        public string hasSpatialCol
+        private string objidCol;
+        public string ObjidCol
         {
-            get { return hasspatialCol; }
+            get { return objidCol; }
             set
             {
-                hasspatialCol = value;
-                NotifyPropertyChanged("hasSpatialCol");
+                objidCol = value;
+                NotifyPropertyChanged("ObjidCol");
             }
+        }
+
+        //private int _reccount;
+        //public int recCount
+        //{
+        //    get { return _reccount; }
+        //    set
+        //    {
+        //        //get record count
+        //        string qtst = "SELECT COUNT(*) FROM  " + cboSchema.SelectedItem.ToString() + "." + cboTables.SelectedItem.ToString();
+        //        HanaCommand cmd2 = new HanaCommand(qtst, Globals.hanaConn);
+        //        HanaDataReader dr2 = null;
+        //        System.Windows.Forms.DataGrid dgResults2 = new System.Windows.Forms.DataGrid();
+        //        dr2 = cmd2.ExecuteReader();
+        //        if (dr2 != null)
+        //        {
+        //            DataTable dt2 = new DataTable();
+        //            dt2.Load(dr2);
+        //            if (dr2 != null)
+        //            {
+        //                if (dt2.Rows.Count > 0)
+        //                {
+        //                    recCount = dt2.Rows.Count;
+        //                }
+        //            }
+        //        }
+
+        //        _reccount = value;
+
+        //    }
+        //}
+
+        private TableViewerPanelViewModel selectedRow;
+        public TableViewerPanelViewModel SelectedRow
+        {
+            get { return selectedRow; }
+            set { selectedRow = value; }
         }
         protected TableViewerPanelViewModel()
         {
@@ -83,25 +110,20 @@ namespace SapHanaAddIn
             }
 
         }
-
         protected override Task InitializeAsync()
         {
             
             return base.InitializeAsync();
         }
-
-        /// <summary>
-        /// Show the DockPane.
-        /// </summary>
         internal static void Show()
         {
             DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
             if (pane == null)
                 return;
-
+         
             pane.Activate();
-           
         }
+
         private ObservableCollection<string> _schemas = new ObservableCollection<string>();
         public ObservableCollection<string> Schemas
         {
@@ -150,10 +172,11 @@ namespace SapHanaAddIn
                 HanaCommand cmd = new HanaCommand("select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSelected + "' and table_name = '" + value + "'", Globals.hanaConn);
                 HanaDataReader dr = cmd.ExecuteReader();
                 List<string> colls = new List<string>();
+     
                 while (dr.Read())
                 {
                     colls.Add(dr.GetString(0));
-
+ 
                 }
                 dr.Close();
                 
@@ -163,19 +186,52 @@ namespace SapHanaAddIn
                 _querytext.SelectString = "";
                 _querytext.SelectString = "SELECT TOP 1000 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSelected + "\".\"" + value + "\"";
                 SpatialCol = "";
-                hasSpatialCol = "";
+                //recCount = 0;
                 cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSelected + "' and table_name = '" + value + "' and data_type_id = 29812";
                 dr = cmd.ExecuteReader();
                 while (dr.Read())
                 {
                     SpatialCol = dr.GetString(0);
                 }
-                if (SpatialCol != "")
-                    hasSpatialCol = "Spatial Field: ";
-                else
-                    hasSpatialCol = "Spatial Field: None";
-
                 dr.Close();
+
+                //find if there is a OBJECTID column
+                ObjidCol = "";
+                //select COLUMN_NAME from SYS.CONSTRAINTS where schema_name like 'JLUOSTARINEN' and table_name = 'TESTCREATEFC'
+                cmd.CommandText = "select COLUMN_NAME from SYS.CONSTRAINTS where schema_name = '" + _currentSelected + "' and table_name = '" + value + "' ";
+                dr = cmd.ExecuteReader();
+                while (dr.Read())
+                {
+                    ObjidCol = dr.GetString(0);
+                }
+                dr.Close();
+                if (ObjidCol == "")
+                {
+                    cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name = '" + _currentSelected + "' and table_name = '" + value + "' and COLUMN_NAME = 'OBJECTID'";
+                    dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        ObjidCol = dr.GetString(0);
+                    }
+                    dr.Close();
+                }
+                else if (ObjidCol == "")
+                {
+                    cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name = '" + _currentSelected + "' and table_name = '" + value + "' and COLUMN_NAME = 'OBJNR'";
+                    dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        ObjidCol = dr.GetString(0);
+                    }
+                    dr.Close();
+                }
+                else if (ObjidCol == "")
+                {
+                    MessageBox.Show("This table does not have a primary id field set.");
+                }
+
+
+
                 _currenttableselected = value;
             }
         }
@@ -214,10 +270,7 @@ namespace SapHanaAddIn
                 
             }
         }
-        /// <summary>
-        /// Text shown near the top of the DockPane.
-        /// </summary>
-        private string _heading = "Search Options";
+        private string _heading = "Search with SQL";
         public string Heading
         {
             get { return _heading; }
@@ -226,7 +279,15 @@ namespace SapHanaAddIn
                 SetProperty(ref _heading, value, () => Heading);
             }
         }
-
+        private string _heading2 = "Results";
+        public string Heading2
+        {
+            get { return _heading2; }
+            set
+            {
+                SetProperty(ref _heading2, value, () => Heading2);
+            }
+        }
 
         private ICommand _executeselect;
         public ICommand ExecuteSelect
@@ -275,30 +336,6 @@ namespace SapHanaAddIn
                 Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
                 dgResults.DataSource = null;
 
-
-                ////cmd.CommandText = "select COLUMN_NAME from TABLE_COLUMNS where schema_name like '" + comboBoxSchemas.SelectedItem.ToString() + "' and table_name = '" + comboBoxTables.SelectedItem.ToString() + "' and data_type_id != 29812";
-
-
-                ////HanaParameter parm1 = new HanaParameter();
-                //cmd.Prepare();
-
-
-                //string colls = "";
-                //char[] charsToTrim = { ',', ' ' };
-                //if (dr != null)
-                //{
-                //    while (dr.Read())
-                //    {
-                //        colls = colls + dr.GetString(0) + ",";
-                //    }
-
-                //}
-                //colls = colls.TrimEnd(charsToTrim);
-                //dr.Close();
-
-
-
-
                 //cmd.CommandText = "SELECT " + colls + " FROM \"" + comboBoxSchemas.SelectedItem.ToString() + "\".\"" + comboBoxTables.SelectedItem.ToString() + "\"";
                 dr = cmd.ExecuteReader();
                 dgResults.DataSource = null;
@@ -309,8 +346,12 @@ namespace SapHanaAddIn
                     DataTable dt = new DataTable();
                     dt.Load(dr);
                     _results = dt.DefaultView;
+
+                    FrameworkApplication.State.Activate("condition_state_hasResults");
                     dr.Close();
                 }
+
+              
 
                 Mouse.OverrideCursor = null;
             }
@@ -370,6 +411,7 @@ namespace SapHanaAddIn
         protected override void OnClick()
         {
             TableViewerPanelViewModel.Show();
+            
         }
     }
 

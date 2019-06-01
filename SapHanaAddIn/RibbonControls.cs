@@ -270,15 +270,7 @@ namespace SapHanaAddIn
             protected override void OnClick()
             {
                 TableViewerPanelViewModel.Show();
-                //System.Windows.Forms.Form tv = new HANATableViewer.Form1();
-                ////tv.Focus();
-                //tv.Activate();
 
-                //tv.Show();
-
-
-
-                //tv.Activate();
             }
         }
         public class btnAddViewToMap : Button

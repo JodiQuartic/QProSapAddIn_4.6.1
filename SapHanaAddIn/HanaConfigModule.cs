@@ -39,6 +39,7 @@ namespace SapHanaAddIn
             }
             FrameworkApplication.State.Deactivate("condition_state_hasProps");
             FrameworkApplication.State.Deactivate("condition_state_isconnected");
+            FrameworkApplication.State.Deactivate("condition_state_hasResult");
 
             //get dsn settings from the local odbc settings and use those for the connectionitems
             //List<string> enumdsn = EnumDsn(); 
