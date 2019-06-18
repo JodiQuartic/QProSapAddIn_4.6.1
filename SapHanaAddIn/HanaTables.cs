@@ -1,66 +1,52 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 namespace SapHanaAddIn
 {
     public class HanaTables : INotifyPropertyChanged
     {
-        private List<string> _tablename;
-        public List<string> TableName
+        private List<string> _tablelist;
+        public List<string> TableList
         {
-            get { return _tablename; }
+            get { return _tablelist; }
             set
             {
-                _tablename = value;
-                RaisePropertyChanged("TableName");
+                _tablelist = value;
+                RaisePropertyChanged("TableList");
             }
         }
 
-        private List<string> _schemaname;
-        public List<string> SchemaName
-        {
-            get { return _schemaname; }
-            set
-            {
-                _schemaname = value;
-                RaisePropertyChanged("SchemaName");
-            }
-        }
 
-        private string _currentSelected;
+        private string _currentselected;
         public string CurrentSelected
         {
-            get { return _currentSelected; }
+            get { return _currentselected; }
             set
             {
-                _currentSelected = value;
-                RaisePropertyChanged(CurrentSelected);
+                _currentselected = value;
+                RaisePropertyChanged("CurrentSelected");
+            }
+        }
+        private string _currenttable;
+        public string CurrentTable
+        {
+            get { return _currenttable; }
+            set
+            {
+                _currenttable = value;
+                RaisePropertyChanged("CurrentTable");
             }
         }
 
         private void RaisePropertyChanged(string propertyName)
         {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(propertyName));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-
         public event PropertyChangedEventHandler PropertyChanged;
-
-        //protected void OnPropertyChanged(string name)
-        //{
-        //    PropertyChangedEventHandler handler = PropertyChanged;
-        //    if (handler != null)
-        //    {
-        //        handler(this, new PropertyChangedEventArgs(name));
-        //    }
-        //}
+        protected void OnPropertyChanged(string name)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
     }
     public class querytext : INotifyPropertyChanged
     {
@@ -76,12 +62,13 @@ namespace SapHanaAddIn
         }
         private void RaisePropertyChanged(string propertyName)
         {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(propertyName));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
         public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string name)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
     }
 }

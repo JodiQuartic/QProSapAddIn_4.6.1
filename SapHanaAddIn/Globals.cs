@@ -15,5 +15,8 @@ namespace SapHanaAddIn
         //-----------------modifiable
         public static Sap.Data.Hana.HanaConnection hanaConn { get; set; }
         public static bool? isHanaConn { get; set; }
+
+        //public static System.Collections.ObjectModel.Collection<string> collSchemas { get; set; }
+        //public static System.Collections.ObjectModel.Collection<string> collTables { get; set; }
     }
 }

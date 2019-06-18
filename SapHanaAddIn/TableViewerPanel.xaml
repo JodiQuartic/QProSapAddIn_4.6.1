@@ -8,7 +8,8 @@
              xmlns:frameworkControls="clr-namespace:ArcGIS.Desktop.Framework.Controls;assembly=ArcGIS.Desktop.Framework"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="500"
-             d:DataContext="{Binding Path=ui.TableViewerPanelViewModel}">
+             d:DataContext="{Binding Path=ui.TableViewerPanelViewModel}" >
+
 
     <UserControl.Resources>
         <ResourceDictionary>
@@ -18,7 +19,8 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <DockPanel Name="MainDp" HorizontalAlignment="Left" Width="auto" MinWidth="500">
+
+    <DockPanel Name="dpMain" HorizontalAlignment="Stretch" Width="auto" MinWidth="500">
 
         <StackPanel Orientation="Vertical" Width="auto">
 
@@ -29,61 +31,81 @@
                 
                 <StackPanel Orientation="Horizontal" Width="auto">
                     <TextBlock   HorizontalAlignment="Left"  Height="25" Text="  Schemas " Style="{DynamicResource Esri_TextBlockH3}" ></TextBlock>
-                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboSchema" ItemsSource="{Binding Schemas}" SelectedItem="{Binding CurrentSelected}"/>
+                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboSchema" ItemsSource="{Binding Schemas}" SelectedItem="{Binding CurrentSelected}" />
                     <TextBlock  HorizontalAlignment="Left"  Height="25" Text="  Tables "  Style="{DynamicResource Esri_TextBlockH3}"  ></TextBlock>
-                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboTables" ItemsSource="{Binding Tables}" SelectedItem="{Binding CurrentTableSelected}"/>
+                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboTables" ItemsSource="{Binding Tables}" SelectedItem="{Binding CurrentTable}" />
                 </StackPanel>
 
             </DockPanel>
 
             <DockPanel KeyboardNavigation.TabNavigation="Local" Height="75" Width="Auto" Margin="3,3,3,3" >
 
-                <TextBox Name="txtQueryTXT" TextWrapping="Wrap"  Height="70" Width="auto"  
+                <TextBox Name="txtQueryText" TextWrapping="Wrap"  Height="70" Width="auto"  
                      Background="{DynamicResource Esri_BackgroundPressedBrush}" 
                      Foreground="{DynamicResource Esri_TextStyleDefaultBrush}" 
                      Text="{Binding QueryTxt.SelectString, Mode=OneWay}" ></TextBox>
                 
             </DockPanel>
 
-            <Button x:Name="btnExecute" HorizontalAlignment="Right"
-                        Style="{DynamicResource Esri_Button}" 
-                        Click="btnExecute_Click" Content="Execute" />
+            <Button x:Name="btnExecute" HorizontalAlignment="Right" Style="{DynamicResource Esri_Button}"
+                        Click="btnExecute_Click" Content="Execute SQL">
+                <!--Button.Style>
+                    <Style TargetType="{x:Type Button}">
+                        <Setter Property="Background" Value="{DynamicResource Esri_BackgroundPressedBrush}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding hasSql}" Value="True">
+                                <Setter Property="Background" Value="LightGray"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style-->
+            </Button>
 
             <TextBlock Text="{Binding Heading2}" Margin="3,3,5,3" Style="{DynamicResource Esri_TextBlockDockPaneHeader}">
             </TextBlock>
 
-            <DockPanel Name="dp"  HorizontalAlignment="Stretch" MaxHeight="150"  >
-                
-                    <Grid Width="Auto">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*"></RowDefinition>
-                        </Grid.RowDefinitions>
+            <DockPanel Name="dpForGrid"  HorizontalAlignment="Stretch" MaxHeight="150" MinWidth="500" >
 
-                        <DataGrid Name="dgSelectedResults" MaxHeight="150" Style="{DynamicResource Esri_DataGrid}" 
+                <Grid Width="Auto" HorizontalAlignment="Stretch" MinWidth="500" >
+
+                    <DataGrid Name="dgForResults" Height="Auto" Width="Auto" MaxHeight="150" MinWidth="500"
+                                  Style="{DynamicResource Esri_DataGrid}"
+                                ScrollViewer.CanContentScroll="True"      
                               IsReadOnly="True" 
                               AutoGenerateColumns="True"
                               HeadersVisibility="Column"
                               HorizontalScrollBarVisibility="Visible"
-                              HorizontalAlignment="Stretch" 
+                              HorizontalAlignment="Stretch"
                               VerticalScrollBarVisibility="Visible"
                               ColumnWidth="SizeToCells"
                               Grid.Row="0">
-                            <DataGrid.ContextMenu>
+                            <!--DataGrid.ContextMenu>
                                 <ContextMenu>
                                 <MenuItem Header="Zoom To" MouseUp="MenuItem_MouseUp"/>
-                            </ContextMenu>
-                            </DataGrid.ContextMenu>
+                            </ContextMenu-->
+                            
                         </DataGrid>
                         
                     </Grid>
                
             </DockPanel>
     
-            <DockPanel VerticalAlignment="Bottom">
+            <DockPanel VerticalAlignment="Bottom" >
     
                 <StackPanel Orientation="Vertical">
-                    <Button Name="btnAddTOC"   HorizontalAlignment="Right" Command="{Binding AddTOC}" Click="btnAddTOC_Click"
-                            Style="{DynamicResource Esri_Button}">Add as QueryLayer</Button>
+                    <Button Name="btnAddTOC" Content="Add to Map Contents"  HorizontalAlignment="Right" Command="{Binding AddTOC}" Click="btnAddTOC_Click"
+                            Style="{DynamicResource Esri_Button}">
+                        <!--Button.Style>
+                            <Style TargetType="{x:Type Button}">
+                                <Setter Property="Background" Value="{DynamicResource Esri_Background}"/>
+                                <Setter Property= "Foreground" Value="{DynamicResource Esri_TextStyleDefaultBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding hasRows}" Value="True">
+                                        <Setter Property="Background" Value="LightGray"/>
+                                        <Setter Property= "Foreground" Value="DimGray"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style-->
+                    </Button>
                     <!--Button Name="btnClose" Grid.Row="0" Grid.Column="0" Height="25" HorizontalAlignment="Right" 
                             Style="{DynamicResource Esri_Button}" Click="btnClose_Click">Close</>-->
 

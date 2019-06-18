@@ -1,9 +1,9 @@
 ﻿<ArcGIS defaultAssembly="SapHanaAddIn.dll" defaultNamespace="SapHanaAddIn" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
   <AddInInfo id="{9981ecfc-db03-4ff9-9f1f-19c092cfecc7}" version="1.0" desktopVersion="2.3.15769">
     <Name>SapHanaAddIn</Name>
-    <Description>SapHanaAddIn description</Description>
+    <Description>An Esri ArcGIS® Pro Add-In for connecting to, exploring and publishing SAP HANA data</Description>
     <Image>Images\AddinDesktop32.png</Image>
-    <Author>jluostarinen</Author>
+    <Author>Quartic Solutions</Author>
     <Company>Quartic Solutions</Company>
     <Date>6/21/2018 7:46:04 PM, 2018</Date>
     <Subject>Framework</Subject>
@@ -20,11 +20,8 @@
     <insertCondition id="condition_notReady" caption="Tool coming with next version">
       <state id="condition_state_notReady" />
     </insertCondition>
-    <insertCondition id="condition_hasResults" caption="Datagrid has data">
-      <state id="condition_state_hasResults" />
-    </insertCondition>
-    
   </conditions>
+  
   <modules>
     <insertModule id="SapHanaAddIn_Config" className="HanaConfigModule" autoLoad="true" caption="Hana Config Settings">
       <tabs>
@@ -56,7 +53,6 @@
       </subgroups>
       <controls>
         <!-- add your controls here -->
-        <!--labelControl id="lblHasConn" caption="Not Connected." />-->
         <comboBox id="cboEnv" disableIfBusy="true" isEditable="false" className="cboEnv" isReadOnly="true" keytip="SV" itemWidth="120" caption="Environment: ">
           <tooltip heading="Connect To the selected HANA DB">
             <disabledText>Pick a HANA DB from the dropdown. </disabledText>
@@ -72,8 +68,8 @@
         <button id="btnSAPConflictDetection" condition="condition_notReady" keytip="Select assets from map and compare the data in SAP with data in GIS" caption="Find Conflicts" className="btnConflictDetection" loadOnClick="true" smallImage="Images\VersionChange16.png" largeImage="Images\selection_replace.png" />
       </controls>
       <dockPanes>
-        <dockPane id="SapHanaAddIn_TableViewerPanel" caption="SAP HANA Data  Explorer" className="TableViewerPanelViewModel" dock="group" dockWith="esri_core_contentsDockPane" condition="condition_isconnected" width="500">
-          <content className="TableViewerPanelView" />
+        <dockPane id="SapHanaAddIn_TableViewerPanel" caption="SAP HANA Data  Explorer" className="TableViewerPanelViewModel" dockWith="esri_core_contentsDockPane" condition="condition_isconnected" dock="float" width="500" >
+          <content className="TableViewerPanelView"  />
         </dockPane>
       </dockPanes>
     </insertModule>

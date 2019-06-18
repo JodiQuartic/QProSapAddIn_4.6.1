@@ -131,7 +131,6 @@
     <Compile Include="Daml.cs" />
     <Compile Include="Globals.cs" />
     <Compile Include="HanaConfigModule.cs" />
-    <Compile Include="HanaConfigModule_old_usesBackstageOptions.cs" />
     <Compile Include="HanaProperties.xaml.cs">
       <DependentUpon>HanaProperties.xaml</DependentUpon>
     </Compile>
@@ -140,9 +139,6 @@
     <Compile Include="RibbonControls.cs" />
     <Compile Include="HanaTables.cs" />
     <Compile Include="SelectionString.cs" />
-    <Compile Include="TableViewerOBSEOLETE.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="TableViewerPanel.xaml.cs">
       <DependentUpon>TableViewerPanel.xaml</DependentUpon>
     </Compile>
@@ -150,12 +146,6 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="DarkImages\App.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="TableViewerOBSEOLETE.resx">
-      <DependentUpon>TableViewerOBSEOLETE.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\bug_yellow_edit.png" />
