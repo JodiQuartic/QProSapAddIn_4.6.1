@@ -27,7 +27,6 @@ namespace SapHanaAddIn
     public partial class TableViewerPanelView : UserControl
     {
         public string _spatialcolumn = "";
-        public string _objidcolumn = "";
         //public int _recCount = 0;
         public string _querystring = "";
         public string _tblname = "";
@@ -39,57 +38,88 @@ namespace SapHanaAddIn
             InitializeComponent();
         }
 
-        protected async void btnExecute_Click(object sender, RoutedEventArgs e)
-        {
-            await QueuedTask.Run(() =>
+        //private void cboTables_Selected(object sender, RoutedEventArgs e)
+        //{
+        //    //ComboBoxItem cmbi = ((sender as ComboBox).SelectedItem as ComboBoxItem);
+        //    //_tblname = cmbi.Content.ToString();
+        //}
+
+        //private void cboSchema_Selected(object sender, RoutedEventArgs e)
+        //{
+        //    try
+        //    {
+        //        ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+        //        {
+        //            //when a schema is selected, init the table cbo values
+        //            //Task rs = retrieveTables();
+        //            HanaCommand cmd = new HanaCommand("SELECT table_name FROM sys.tables where schema_name = " + cboSchema.SelectedItem.ToString(), Globals.hanaConn);
+        //            HanaDataReader dr = cmd.ExecuteReader();
+        //            TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
+        //            vm._tables.Clear();
+        //            while (dr.Read())
+        //                    {
+        //                        vm._tables.Add(dr.GetString(1));
+        //                    }
+        //                    dr.Close();
+        //                    //Globals.collTables = _tables;
+                        
+        //            //and set the currentSchema
+        //            //HanaTables._currentSchema = Value;
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.ToString(),
+        //         "Failed to set table");
+        //    }
+        //}
+    protected void btnExecute_Click(object sender, RoutedEventArgs e)
+    {
+            try
             {
-                try
+                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+                if (Globals.hanaConn == null || Globals.hanaConn.State != ConnectionState.Open)
                 {
-                    Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Connect to a database first.", "Not connected");
+                    return;
+                }
+                string txtSQLStatement = txtQueryText.Text;
+                if (txtSQLStatement.Trim().Length < 1)
+                {
+                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Please enter the command text.", "Empty command text");
+                    return;
+                }
 
+                string sc = "";
+                string tl = "";
+                string qtest = "";
+                if (lblSpatialCol.Content != null)
+                {
+                    sc = lblSpatialCol.Content.ToString();
+                }
 
-                    if (Globals.hanaConn == null || Globals.hanaConn.State != ConnectionState.Open)
+                if (cboTables.SelectedItem != null)
+                { tl = cboTables.SelectedItem.ToString(); }
+                    
+                if (txtQueryText.Text != null)
+                { qtest = txtQueryText.Text; }
+
+                if (sc != "")
+                {
+                    if (txtSQLStatement.IndexOf(sc) > 0)
                     {
-                        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Connect to a database first.", "Not connected");
-                        return;
+                        qtest = txtSQLStatement.Replace(sc, sc + ".st_aswkt()" + " as " + sc);
                     }
-                    string txtSQLStatement = txtQueryText.Text;
-                    if (txtSQLStatement.Trim().Length < 1)
+                    else
                     {
-                        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Please enter the command text.", "Empty command text");
-                        return;
+                        qtest = txtSQLStatement;
                     }
-
-                    //*
-                    //**
-                    string spatialCol = "";
-                    if (lblSpatialCol.Content != null) { spatialCol = lblSpatialCol.Content.ToString(); }
-                    string objidCol = "";
-                    if (lblObjidCol.Content != null) { objidCol = lblObjidCol.Content.ToString(); }
-                    string tableList = "";
-                    if (cboTables.SelectedItem != null) { tableList = cboTables.SelectedItem.ToString(); }
-
-                    string qtest = "";
-                    if (txtQueryText.Text != null) { qtest = txtQueryText.Text; }
-
-                    if (spatialCol != "")
-                    {
-                        if (txtSQLStatement.IndexOf(spatialCol) > 0)
-                        {
-                            qtest = txtSQLStatement.Replace(spatialCol, spatialCol + ".st_aswkt()" + " as " + spatialCol);
-                        }
-                        else
-                        {
-                            qtest = txtSQLStatement;
-                        }
-                    }
-
-                    HanaCommand cmd = new HanaCommand(qtest, Globals.hanaConn);
+                }
+                
+                HanaCommand cmd = new HanaCommand(qtest, Globals.hanaConn);
                     HanaDataReader dr = null;
                     System.Windows.Forms.DataGrid dgResults = new System.Windows.Forms.DataGrid();
 
-                    //build sql select statement for query
-                    //cmd.CommandText = "SELECT " + colls + " FROM \"" + comboBoxSchemas.SelectedItem.ToString() + "\".\"" + comboBoxTables.SelectedItem.ToString() + "\"";
                     dr = cmd.ExecuteReader();
                     dgResults.DataSource = null;
                     dgResults.Refresh();
@@ -128,16 +158,18 @@ namespace SapHanaAddIn
                         ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This data reader is empty", "Table is empty");
                         return;
                     }
-                }
-                catch (HanaException ex)
-                {
-                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
-                    ex.Errors[0].NativeError.ToString() + ")",
+
+                
+            }
+            catch (Exception ex)
+            {
+                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message,
                     "Failed to execute SQL statement");
-                    Mouse.OverrideCursor = null;
-                }
-            });
-            Mouse.OverrideCursor = null;
+
+                Mouse.OverrideCursor = null;
+            }
+      
+        Mouse.OverrideCursor = null;
         }
 
         private void btnClose_Click(object sender, RoutedEventArgs e)
@@ -153,7 +185,6 @@ namespace SapHanaAddIn
             if (MapView.Active != null)
             {
                 _spatialcolumn = lblSpatialCol.Content.ToString();
-                _objidcolumn = lblObjidCol.Content.ToString();
                 //_recCount = lblrecCount.Content;
                 _querystring = txtQueryText.Text;
                 _tblname = cboTables.SelectedItem.ToString();
@@ -172,7 +203,7 @@ namespace SapHanaAddIn
                 ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Please activate a map");
             }
         }
-        
+
         public async Task OpenEnterpriseGeodatabase()
         {
             await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
@@ -201,17 +232,17 @@ namespace SapHanaAddIn
                    {
                        AuthenticationMode = AuthenticationMode.DBMS,
 
-                        // Where testMachine is the machine where the instance is running and testInstance is the name of the db instance.
-                        Instance = cboEnv.cboBox.Text, //@"sapqe2hana",
+                       // Where testMachine is the machine where the instance is running and testInstance is the name of the db instance.
+                       Instance = cboEnv.cboBox.Text, //@"sapqe2hana",
 
-                        // Provided that a login called gdb has been created and corresponding schema has been created with the required permissions.
-                        User = connitem.userid,// 
-                        Password = tst2,
+                       // Provided that a login called gdb has been created and corresponding schema has been created with the required permissions.
+                       User = connitem.userid,// 
+                       Password = tst2,
                        Version = "dbo.DEFAULT"
                    };
 
-                    //create a query layer
-                    using (Geodatabase geodatabase = new Geodatabase(connectionProperties))
+                   //create a query layer
+                   using (Geodatabase geodatabase = new Geodatabase(connectionProperties))
                    {
                        Connector pCon = geodatabase.GetConnector();
                        pCon.ToString();
@@ -219,28 +250,22 @@ namespace SapHanaAddIn
                    using (Database db = new Database(connectionProperties))
                    {
                        string thequery = "";
-                       string spatialCol = _spatialcolumn;
-                       string objidCol = _objidcolumn;
-                       string tblName = _tblname;
-                       Boolean hasRows = _hasrows;
-                        //int recCount = _recCount;
+                       string txtSQLStatement = _querystring;// txtQueryText.Text;
+                                                             //"Select * from 'xxx'.'Points'", "MySelect"
+                                                             //QueryDescription qds = db.GetQueryDescription("Select * from \"xxx\".\"TESTCREATEFC\"", "MySelect");
 
-                        string txtSQLStatement = _querystring;// txtQueryText.Text;
-                                                              //"Select * from 'xxx'.'Points'", "MySelect"
-                                                              //QueryDescription qds = db.GetQueryDescription("Select * from \"xxx\".\"TESTCREATEFC\"", "MySelect");
-
-                        //now append spatial column
-                        if (spatialCol != "")
+                       //now append spatial column
+                       if (lblSpatialCol.Content.ToString() != "")
                        {
-                           thequery = txtSQLStatement.Insert(txtSQLStatement.IndexOf("SELECT") + 16, spatialCol + ", ");
+                           thequery = txtSQLStatement.Insert(txtSQLStatement.IndexOf("SELECT") + 16, lblSpatialCol.Content.ToString() + ", ");
                        }
                        else
                        {
                            thequery = txtSQLStatement;
                        }
 
-                        //create table name for the layer
-                        Random r = new Random();
+                       //create table name for the layer
+                       Random r = new Random();
                        int n = r.Next();
                        string s = n.ToString();
                        s = s.Substring(s.Length - 4);
@@ -248,39 +273,39 @@ namespace SapHanaAddIn
 
                        QueryDescription qds = db.GetQueryDescription(txtSQLStatement, "MySelect");// " select GEF_OBJECTID, GEF_OBJKEY, OBJNR, ERNAM, ERDAT, KTEXT, IDAT2, AENAM, ARTPR, GEF_SHAPE from JLUOSTARINEN.ORDERSWLINE", "MySelect");                                                                                                   
 
-                        //must have a pk OBJECTID - required
-                        if (objidCol == "OBJECTID")
+                       //must have a pk OBJECTID - required
+                       if (lblObjidCol.Content.ToString() == "OBJECTID")
                        {
-                           qds.SetObjectIDFields(objidCol);
+                           qds.SetObjectIDFields("OBJECTID");
                        }
                        else
                        {
                            string oflds = qds.GetObjectIDFields();
-
+                           string oc ="";
                            if (oflds.Length > 0)
                            {
-                               objidCol = oflds.ToString().Split(',')[0];
-                               qds.SetObjectIDFields(objidCol);
+                               oc = oflds.ToString().Split(',')[0];
+                               qds.SetObjectIDFields(oc);
                            }
                            else
                            {
-                                //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This table does not have an OBJECTID field in the database.  A temporary one will be be created.");
-                                //construct objectid as it is a required column in Pro
-                                //row_number() over(partition by " + tempid + ") as OBJECTID";))
-                                //string fakeObjCol = objidCol.Split('-')[1];
-                                var lst = qds.GetFields();
+                               //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This table does not have an OBJECTID field in the database.  A temporary one will be be created.");
+                               //construct objectid as it is a required column in Pro
+                               //row_number() over(partition by " + tempid + ") as OBJECTID";))
+                               //string fakeObjCol = objidCol.Split('-')[1];
+                               var lst = qds.GetFields();
                                if (lst != null)
                                {
                                    if (lst.Count > 0)
                                    {
-                                       objidCol = lst[0].Name;
+                                       oc = lst[0].Name;
                                    }
                                }
 
-                               string fakeObjSql = "row_number()" + " over(partition by " + objidCol + ")" + " as OBJID";
+                               string fakeObjSql = "row_number()" + " over(partition by " + oc + ")" + " as OBJID";
                                thequery = txtSQLStatement.Insert(txtSQLStatement.IndexOf("FROM") - 1, ", " + fakeObjSql);
 
-                               qds.SetObjectIDFields(objidCol);
+                               qds.SetObjectIDFields(oc);
                            }
                        }
 
@@ -301,16 +326,15 @@ namespace SapHanaAddIn
                                FeatureLayer pFL = (FeatureLayer)LayerFactory.Instance.CreateLayer(pTab.GetDataConnection(), MapView.Active.Map, layerName: s);
 
                                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Layer Successfully added to the Contents Tab: " + s);
-                                //MapView.Active.RedrawAsync(true);
-                                pFL.Select(null, SelectionCombinationMethod.New);
+                               //MapView.Active.RedrawAsync(true);
+                               pFL.Select(null, SelectionCombinationMethod.New);
                                MapView.Active.ZoomToSelected();
 
                            }
-                           catch (HanaException ex)
-                           {
-                               ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
-                               ex.Errors[0].NativeError.ToString() + ")",
-                               "Failed to add table.  There is a problem with either the Geometry field type or the data within it.");
+                            catch (Exception ex)
+                            {
+                                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message,
+                          "Failed to add table.  There is a problem with either the Geometry field type or the data within it.");
                                return;
                            }
                        }
@@ -329,11 +353,9 @@ namespace SapHanaAddIn
 
                    }
                }
-               catch (HanaException ex)
+               catch (Exception ex)
                {
-                   ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
-                    ex.Errors[0].NativeError.ToString() + ")",
-                    "Failed to execute SQL statement");
+                   ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message);
                    Mouse.OverrideCursor = null;
 
                }
@@ -512,28 +534,6 @@ namespace SapHanaAddIn
             return child;
         }
 
-        //private void cboTables_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        //{
-        //    try
-        //    {
-        //        ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
-        //        {
-        //            //set the current table property
-        //            ComboBoxItem cmbi = ((sender as ComboBox).SelectedItem as ComboBoxItem);
-
-        //            _tblname = cmbi.Content.ToString();
-                
-
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.ToString(),
-        //         "Failed to set table");
-        //    }
-        //}
-
-       
     }
 }
 

@@ -4,6 +4,17 @@ namespace SapHanaAddIn
 {
     public class HanaTables : INotifyPropertyChanged
     {
+
+        private List<string> _schemalist;
+        public List<string> SchemaList
+        {
+            get { return _schemalist; }
+            set
+            {
+                _schemalist = value;
+                RaisePropertyChanged("SchemaList");
+            }
+        }
         private List<string> _tablelist;
         public List<string> TableList
         {
@@ -15,25 +26,14 @@ namespace SapHanaAddIn
             }
         }
 
-
-        private string _currentselected;
-        public string CurrentSelected
+        private string _currentschema;
+        public string CurrentSchema
         {
-            get { return _currentselected; }
+            get { return _currentschema; }
             set
             {
-                _currentselected = value;
-                RaisePropertyChanged("CurrentSelected");
-            }
-        }
-        private string _currenttable;
-        public string CurrentTable
-        {
-            get { return _currenttable; }
-            set
-            {
-                _currenttable = value;
-                RaisePropertyChanged("CurrentTable");
+                _currentschema = value;
+                RaisePropertyChanged("CurrentSchema");
             }
         }
 

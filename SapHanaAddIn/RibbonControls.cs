@@ -61,52 +61,30 @@ namespace SapHanaAddIn
         {
             await QueuedTask.Run(() =>
             {
-            try
-            {
+                try
+                {
                     Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
                     FrameworkApplication.State.Activate("condition_state_hasProps");
 
-                if (cboEnv.cboBox.SelectedItem == null)
-                {
-                    FrameworkApplication.State.Deactivate("condition_state_hasProps");
-                    return;
-                }
-
-                if (Globals.isHanaConn == null)
-                {
-                    Globals.isHanaConn = new bool();
-                }
-
-                if (Globals.hanaConn == null)
-                {
-                    Globals.hanaConn = new HanaConnection();
-                }
-                if (Globals.hanaConn != null)
-                {
-                    Globals.hanaConn.Close();
-                }
-
-                //dispose of panel if it exists, so dropdowns all get reset.
-                DockPane pne = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel");
-                if (pne != null)
-                {
-                    TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
-                    vm = null;
-                    pne = null;
+                    if (cboEnv.cboBox.SelectedItem == null)
+                    {
+                        FrameworkApplication.State.Deactivate("condition_state_hasProps");
+                        return;
                     }
 
-                //clear schemas (it is bound)
-                //if (Globals.collSchemas == null)
-                //{
-                //    Globals.collSchemas = new System.Collections.ObjectModel.Collection<string>();
-                //}
+                    //recreate connection each time cboenv changes 
+                    if (Globals.hanaConn == null)
+                    {
+                        Globals.hanaConn = new HanaConnection();
+                    }
+                    else
+                    {
+                        Globals.hanaConn.Close();
+                        Globals.hanaConn = null;
+                    }
 
-                //Globals.collSchemas.Clear();
-                //while (dr.Read())
-                //{
-                //    Globals.collSchemas.Add(dr.GetString(0));
-                //}
-                //dr.Close();
+                    if (Globals.isHanaConn == null) { Globals.isHanaConn = new bool(); }
+                    else { Globals.isHanaConn = null; }
 
                     HanaPropertiesViewModel ass = new HanaPropertiesViewModel();
                     HanaPropertiesView dd = new HanaPropertiesView();
@@ -123,7 +101,7 @@ namespace SapHanaAddIn
                     HanaCredential hcr = new HanaCredential(connitem.userid, ss);
                     Globals.hanaConn.Credential = hcr;
                     Globals.hanaConn.Open();
-                    
+
                     FrameworkApplication.State.Activate("condition_state_isconnected");
                     IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
 
@@ -141,22 +119,38 @@ namespace SapHanaAddIn
                     {
                         wrapper3.Caption = "Connected to " + item.Text;
                         wrapper3.Checked = false;
-
                     }
-                    else if (Globals.isHanaConn == false)
+
+                    //dispose of panel if it exists, so dropdowns all get reset.
+                    DockPane pne = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel");
+                    if (pne != null)
                     {
-
+                        TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
+                        vm = null;
+                        pne = null;
                     }
-                }
-                catch (HanaException ex)
-                {
-                    MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
-                     ex.Errors[0].NativeError.ToString() + ")",
-                     "Failed to open Connection" + " " + item.Text);
-                    Mouse.OverrideCursor = null;
 
-                }
-                Mouse.OverrideCursor = null;
+                    ////clear schemas (it is bound)
+                    //if (Globals.collSchemas == null)
+                    //{
+                    //    Globals.collSchemas = new System.Collections.ObjectModel.Collection<string>();
+                    //}
+
+                    //Globals.collSchemas.Clear();
+                    //while (dr.Read())
+                    //{
+                    //    Globals.collSchemas.Add(dr.GetString(0));
+                    //}
+                    //dr.Close();
+                
+            }
+                catch (Exception ex)
+                {
+                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message);
+                     Mouse.OverrideCursor = null;
+
+            }
+            Mouse.OverrideCursor = null;
 
             });
             Mouse.OverrideCursor = null;
@@ -167,7 +161,6 @@ namespace SapHanaAddIn
             protected override void OnClick()
             {
                 TableViewerPanelViewModel.Show();
-
             }
         }
        

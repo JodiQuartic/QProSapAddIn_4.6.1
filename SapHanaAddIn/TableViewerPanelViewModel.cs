@@ -18,39 +18,35 @@ namespace SapHanaAddIn
         public const string _dockPaneID = "SapHanaAddIn_TableViewerPanel";
         protected TableViewerPanelViewModel()
         {
-            HTables = new ObservableCollection<HanaTables>();
+            //HTables = new ObservableCollection<HanaTables>();
             try
             {
-
-                if (Globals.isHanaConn == null) { Globals.isHanaConn = new bool(); }
-                if (Globals.hanaConn == null) { Globals.hanaConn = new HanaConnection(); }
-                if (Globals.hanaConn != null) { Globals.hanaConn.Close(); }
-
                 //dispose of panel if it exists, so dropdowns all get reset.
-                DockPane pne = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel");
-                if (pne != null)
-                {
-                    TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
-                    vm = null;
-                    pne = null;
-                }
+                //DockPane pne = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel");
+                //if (pne != null)
+                // {
+                //TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
+                //vm = null;
+                //pne = null;
+                //}
 
-                HanaPropertiesViewModel ass = new HanaPropertiesViewModel();
-                HanaPropertiesView dd = new HanaPropertiesView();
-                string fff = ass.ModuleSetting2;
-                HanaConfigModule sds = HanaConfigModule.Current;
-                ComboBoxItem itm = (ComboBoxItem)cboEnv.cboBox.SelectedItem;
-                string sss = itm.Text;
-                ConnectionItem connitem = itm.Icon as ConnectionItem;
-                Globals.hanaConn.ConnectionString = "Server=" + connitem.server;
-                Globals.isHanaConn = true;
-                SecureString ss = new SecureString();
-                ss = connitem.pass;
-                ss.MakeReadOnly();
-                HanaCredential hcr = new HanaCredential(connitem.userid, ss);
-                Globals.hanaConn.Credential = hcr;
-                Globals.hanaConn.Open(); if (Globals.hanaConn == null)
+                //HanaPropertiesViewModel ass = new HanaPropertiesViewModel();
+                //HanaPropertiesView dd = new HanaPropertiesView();
+                //string fff = ass.ModuleSetting2;
+                //HanaConfigModule sds = HanaConfigModule.Current;
+                //ComboBoxItem itm = (ComboBoxItem)cboEnv.cboBox.SelectedItem;
+                //string sss = itm.Text;
+                //ConnectionItem connitem = itm.Icon as ConnectionItem;
+                //Globals.hanaConn.ConnectionString = "Server=" + connitem.server;
+                //Globals.isHanaConn = true;
+                //SecureString ss = new SecureString();
+                //ss = connitem.pass;
+                //ss.MakeReadOnly();
+                //HanaCredential hcr = new HanaCredential(connitem.userid, ss);
+                //Globals.hanaConn.Credential = hcr;
+                //Globals.hanaConn.Open();
 
+                //set schemas for dropdown
                 HanaCommand cmd = new HanaCommand("select * from schemas", Globals.hanaConn);
                 HanaDataReader dr = cmd.ExecuteReader();
                 this._schemas.Clear();
@@ -59,14 +55,11 @@ namespace SapHanaAddIn
                     _schemas.Add(dr.GetString(0));
                 }
                 dr.Close();
-
-
+        
             }
-            catch (HanaException ex)
+            catch (Exception ex)
             {
-                MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
-                 ex.Errors[0].NativeError.ToString() + ")",
-                 "Failed to initialize table drop down.");
+                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message,"Failed to initialize table drop down.");
             }
 
         }
@@ -82,59 +75,8 @@ namespace SapHanaAddIn
 
             pane.Activate();
         }
-        //public async Task retrieveSchemas()
-        //{
-        //    await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
-        //    {
-        //        try
-        //        {
-        //            //set schemas for dropdown
-        //            HanaCommand cmd = new HanaCommand("SELECT schema_name,table_name FROM sys.tables where schema_name = '" + value + "'", Globals.hanaConn);
-        //            HanaDataReader dr = cmd.ExecuteReader();
-        //            _schemas.Clear();
 
-        //            while (dr.Read())
-        //            {
-        //                Schemas.Add(dr.GetString(1));
-        //            }
-        //            dr.Close();
-        //            Globals.collSchemas = _schemas;
-        //        }
-        //        catch (HanaException ex)
-        //        {
-        //            ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
-        //             ex.Errors[0].NativeError.ToString() + ")",
-        //             "Failed to retrieve schemas from HANA");
-        //        }
-        //    });
-        //}
-        //public async Task retrieveTables()
-        //{
-        //    await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
-        //    {
-        //        try
-        //        {
-        //            //set tables for dropdown
-        //            HanaCommand cmd = new HanaCommand("SELECT table_name FROM sys.tables where schema_name = " + _currentSelected, Globals.hanaConn);
-        //            HanaDataReader dr = cmd.ExecuteReader();
-        //            _tables.Clear();
 
-        //            while (dr.Read())
-        //            {
-        //                Tables.Add(dr.GetString(1));
-        //            }
-        //            dr.Close();
-        //            Globals.collTables = _tables;
-        //        }
-        //        catch (HanaException ex)
-        //        {
-        //            ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
-        //             ex.Errors[0].NativeError.ToString() + ")",
-        //             "Failed to retrieve tables from HANA");
-        //        }
-        //    });
-        //}
-        public ObservableCollection<HanaTables> HTables { get; set; }
         public ObservableCollection<string> _schemas = new ObservableCollection<string>();
         public ObservableCollection<string> Schemas
         {
@@ -144,17 +86,18 @@ namespace SapHanaAddIn
             }
             set
             {
-                HanaCommand cmd = new HanaCommand("select * from schemas", Globals.hanaConn);
-                HanaDataReader dr = cmd.ExecuteReader();
-                this._schemas.Clear();
-                while (dr.Read())
-                {
-                    _schemas.Add(dr.GetString(0));
-                }
-                dr.Close();
+                //HanaCommand cmd = new HanaCommand("select * from schemas", Globals.hanaConn);
+                //HanaDataReader dr = cmd.ExecuteReader();
+                //this._schemas.Clear();
+                //while (dr.Read())
+                //{
+                //    _schemas.Add(dr.GetString(0));
+                //}
+                //dr.Close();
+                //Task rs = retrieveSchemas();
             }
         }
-        private ObservableCollection<string> _tables = new ObservableCollection<string>();
+        public ObservableCollection<string> _tables = new ObservableCollection<string>();
         public ObservableCollection<string> Tables
         {
             get
@@ -163,27 +106,41 @@ namespace SapHanaAddIn
             }
             set
             {
+                ////_tables = value;
+                //HanaCommand cmd = new HanaCommand("SELECT schema_name,table_name FROM sys.tables where schema_name = '" + value + "'", Globals.hanaConn);
+                //HanaDataReader dr = cmd.ExecuteReader();
+                ////comboBoxTables.Items.Clear();
+                //_tables.Clear();
+                //while (dr.Read())
+                //{
+                //    _tables.Add(dr.GetString(1));
+                //}
+                //dr.Close();
                 _tables = value;
             }
         }
-        private string _currentSelected;
-        public string CurrentSelected
+        private string _currentSchema;
+        public string CurrentSchema
         {
-            get { return _currentSelected; }
+            get { return _currentSchema; }
             set
             {
-                HanaCommand cmd = new HanaCommand("SELECT schema_name,table_name FROM sys.tables where schema_name = '" + value + "'", Globals.hanaConn);
-                HanaDataReader dr = cmd.ExecuteReader();
-                //comboBoxTables.Items.Clear();
-                _tables.Clear();
-                while (dr.Read())
-                {
-                    _tables.Add(dr.GetString(1));
-                }
-                dr.Close();
-                _currentSelected = value;
-                //RaisePropertyChanged(CurrentSelected);
+                _currentSchema = value;
+                RaisePropertyChanged(CurrentSchema);
             }
+        }
+
+        private void RaisePropertyChanged(string currentSchema)
+        {
+            //set table list
+            HanaCommand cmd = new HanaCommand("SELECT table_name FROM sys.tables where schema_name = '" + currentSchema + "'", Globals.hanaConn);
+            HanaDataReader dr = cmd.ExecuteReader();
+            _tables.Clear();
+            while (dr.Read())
+            {
+                _tables.Add(dr.GetString(0));
+            }
+            dr.Close();
         }
 
         private string _currenttable;
@@ -192,28 +149,45 @@ namespace SapHanaAddIn
             get { return _currenttable; }
             set
             {
-                HanaCommand cmd = new HanaCommand("select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSelected + "' and table_name = '" + value + "'", Globals.hanaConn);
+                HanaCommand cmd = new HanaCommand("select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + value + "'", Globals.hanaConn);
                 HanaDataReader dr = cmd.ExecuteReader();
                 List<string> colls = new List<string>();
                 while (dr.Read())
                 {
-                    colls.Add(dr.GetString(0));
+                    //fix bug with slash in column namestring
+                    if (dr.GetString(0).Contains("\\"))
+                    {
+                        var s = '"' + dr.GetString(0) +'"';
+                        colls.Add(s);
+                    }
+                    else
+                    { colls.Add(dr.GetString(0)); }
                 }
                 dr.Close();
 
-                //_querytext.Clear();
-                //_querytext.Add( "SELECT TOP 1000 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSelected + "\".\"" + value + "\"");
+                //set initial querytext string
                 _querytext.SelectString = "";
-                _querytext.SelectString = "SELECT TOP 1000 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSelected + "\".\"" + value + "\"";
+                _querytext.SelectString = "SELECT TOP 1000 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSchema + "\".\"" + value + "\"";
+
+                //find spatial column
                 SpatialCol = "";
-                cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSelected + "' and table_name = '" + value + "' and data_type_id = 29812";
+                cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + value + "' and data_type_id = 29812";
                 dr = cmd.ExecuteReader();
                 while (dr.Read())
                 {
                     SpatialCol = dr.GetString(0);
                 }
-
                 dr.Close();
+                
+                //find objectid
+                cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + value + "' and COLUMN_NAME = 'OBJECTID'";
+                dr = cmd.ExecuteReader();
+                while (dr.Read())
+                {
+                    objidCol = dr.GetString(0);
+                }
+                dr.Close();
+
                 _currenttable = value;
             }
         }
@@ -422,11 +396,9 @@ namespace SapHanaAddIn
                 else { hasRows = false; }
                 Mouse.OverrideCursor = null;
             }
-            catch (HanaException ex)
+            catch (Exception ex)
             {
-                MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
-                ex.Errors[0].NativeError.ToString() + ")",
-                "Failed to execute SQL statement");
+                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message,  "MyAction failed");
                 if (dr != null)
                 {
                     dr.Close();

@@ -31,7 +31,7 @@
                 
                 <StackPanel Orientation="Horizontal" Width="auto">
                     <TextBlock   HorizontalAlignment="Left"  Height="25" Text="  Schemas " Style="{DynamicResource Esri_TextBlockH3}" ></TextBlock>
-                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboSchema" ItemsSource="{Binding Schemas}" SelectedItem="{Binding CurrentSelected}" />
+                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboSchema" ItemsSource="{Binding Schemas}" SelectedItem="{Binding CurrentSchema}"/>
                     <TextBlock  HorizontalAlignment="Left"  Height="25" Text="  Tables "  Style="{DynamicResource Esri_TextBlockH3}"  ></TextBlock>
                     <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboTables" ItemsSource="{Binding Tables}" SelectedItem="{Binding CurrentTable}" />
                 </StackPanel>
@@ -118,11 +118,11 @@
                                    VerticalAlignment="Center"
                                   Foreground="Black"  />
                         </StatusBarItem>
-                        <StatusBarItem HorizontalAlignment="Right" >
-                            <TextBlock Text="{Binding ObjidCol, StringFormat='ObjectidColumn: {0}'}" ToolTip="Field with Primary Key"
+                        <!--StatusBarItem HorizontalAlignment="Right" >
+                            <TextBlock Text="{Binding ObjidCol}" ToolTip="Field with Primary Key"
                                    Foreground="Black"            
                                     VerticalAlignment="Center"/>
-                        </StatusBarItem>
+                        </-->
                     </StatusBar>
                 </StackPanel>
                 
