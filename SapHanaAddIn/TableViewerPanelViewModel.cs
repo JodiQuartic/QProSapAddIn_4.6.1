@@ -47,7 +47,7 @@ namespace SapHanaAddIn
                 //Globals.hanaConn.Open();
 
                 //set schemas for dropdown
-                HanaCommand cmd = new HanaCommand("select * from schemas", Globals.hanaConn);
+                HanaCommand cmd = new HanaCommand("select TOP 2000 * from schemas", Globals.hanaConn);
                 HanaDataReader dr = cmd.ExecuteReader();
                 this._schemas.Clear();
                 while (dr.Read())
@@ -55,11 +55,11 @@ namespace SapHanaAddIn
                     _schemas.Add(dr.GetString(0));
                 }
                 dr.Close();
-        
+
             }
             catch (Exception ex)
             {
-                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message,"Failed to initialize table drop down.");
+                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message, "Failed to initialize table drop down.");
             }
 
         }
@@ -67,6 +67,7 @@ namespace SapHanaAddIn
         {
             return base.InitializeAsync();
         }
+
         internal static void Show()
         {
             DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
@@ -75,9 +76,20 @@ namespace SapHanaAddIn
 
             pane.Activate();
         }
+        protected override void OnHidden()
+        {
+            //clear stuff out
+            //_tables.Clear();
+            //_schemas.Clear();
+            //_currenttable = "";
+            //_currentSchema = "";
+            //_results = null;
+            //_querytext.SelectString = "";
+            //_objidCol.SelectString = "";
+            //_spatialCol.SelectString = "";
+        }
 
-
-        public ObservableCollection<string> _schemas = new ObservableCollection<string>();
+        private ObservableCollection<string> _schemas = new ObservableCollection<string>();
         public ObservableCollection<string> Schemas
         {
             get
@@ -95,9 +107,10 @@ namespace SapHanaAddIn
                 //}
                 //dr.Close();
                 //Task rs = retrieveSchemas();
+                _schemas = value;
             }
         }
-        public ObservableCollection<string> _tables = new ObservableCollection<string>();
+        private ObservableCollection<string> _tables = new ObservableCollection<string>();
         public ObservableCollection<string> Tables
         {
             get
@@ -132,15 +145,28 @@ namespace SapHanaAddIn
 
         private void RaisePropertyChanged(string currentSchema)
         {
-            //set table list
-            HanaCommand cmd = new HanaCommand("SELECT table_name FROM sys.tables where schema_name = '" + currentSchema + "'", Globals.hanaConn);
-            HanaDataReader dr = cmd.ExecuteReader();
+            Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            
+            //clear stuff out
             _tables.Clear();
+            _currenttable = "";
+            _results = null;
+            _querytext.SelectString = "";
+            _objidCol.SelectString = "";
+            _spatialCol.SelectString = "";
+            //_actrecCount.SelectString = "";
+            _totrecCount.SelectString = "";
+
+
+            //set table list
+            HanaCommand cmd = new HanaCommand("SELECT TOP 2000 table_name FROM sys.tables where schema_name = '" + currentSchema + "'", Globals.hanaConn);
+            HanaDataReader dr = cmd.ExecuteReader();
             while (dr.Read())
             {
                 _tables.Add(dr.GetString(0));
             }
             dr.Close();
+            Mouse.OverrideCursor = null;
         }
 
         private string _currenttable;
@@ -149,15 +175,24 @@ namespace SapHanaAddIn
             get { return _currenttable; }
             set
             {
+                //clear stuff out
+                _results = null;
+                _querytext.SelectString = "";
+                _objidCol.SelectString = "";
+                _spatialCol.SelectString = "";
+                //_actrecCount.SelectString = "";
+                _totrecCount.SelectString = "";
+
+                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
                 HanaCommand cmd = new HanaCommand("select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + value + "'", Globals.hanaConn);
                 HanaDataReader dr = cmd.ExecuteReader();
                 List<string> colls = new List<string>();
                 while (dr.Read())
                 {
                     //fix bug with slash in column namestring
-                    if (dr.GetString(0).Contains("\\"))
+                    if (dr.GetString(0).IndexOfAny(new char[] { ' ', '/', '\\' }) != -1)
                     {
-                        var s = '"' + dr.GetString(0) +'"';
+                        var s = '"' + dr.GetString(0) + '"';
                         colls.Add(s);
                     }
                     else
@@ -167,116 +202,176 @@ namespace SapHanaAddIn
 
                 //set initial querytext string
                 _querytext.SelectString = "";
-                _querytext.SelectString = "SELECT TOP 1000 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSchema + "\".\"" + value + "\"";
+                _querytext.SelectString = "SELECT TOP 2000 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSchema + "\".\"" + value + "\"";
 
                 //find spatial column
-                SpatialCol = "";
+                SpatialCol.SelectString = "";
                 cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + value + "' and data_type_id = 29812";
                 dr = cmd.ExecuteReader();
-                while (dr.Read())
+                if (dr.HasRows)
                 {
-                    SpatialCol = dr.GetString(0);
+                    while (dr.Read())
+                    {
+                        _spatialCol.SelectString = dr.GetString(0);
+                    }
                 }
+                else
+                { _spatialCol.SelectString = "none"; }
                 dr.Close();
-                
+
                 //find objectid
                 cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + value + "' and COLUMN_NAME = 'OBJECTID'";
                 dr = cmd.ExecuteReader();
-                while (dr.Read())
+                if (dr.HasRows)
                 {
-                    objidCol = dr.GetString(0);
+                    while (dr.Read())
+                    {
+                        _objidCol.SelectString = dr.GetString(0);
+                    }
                 }
+                else
+                { _objidCol.SelectString = "none"; }
                 dr.Close();
 
-                _currenttable = value;
+                //get actual count
+                TotRecCount.SelectString = "";
+                cmd.CommandText = "SELECT COUNT(*) FROM \"" + _currentSchema + "\".\"" + value + "\"";
+                dr = cmd.ExecuteReader();
+                if (dr.HasRows)
+                {
+                    while (dr.Read())
+                    {
+                        _totrecCount.SelectString = dr.GetString(0);
+                    }
+                }
+                else
+                { _totrecCount.SelectString= ""; }
+                dr.Close();
+
+                Mouse.OverrideCursor = null;
             }
         }
        
-
-        private string spatialCol;
-        public string SpatialCol
+        private SelectionString _spatialCol;
+        public SelectionString SpatialCol
         {
-            get { return spatialCol; }
-            set {
-                spatialCol = value;
-                //NotifyPropertyChanged("SpatialCol");
+            get
+            {
+                if (_spatialCol == null)
+                {
+                    _spatialCol = new SelectionString();
+                }
+                return _spatialCol;
             }
-        }
-        private string objidCol;
-        public string ObjidCol
-        {
-            get { return objidCol; }
             set
             {
-                objidCol = value;
-                //NotifyPropertyChanged("ObjidCol");
+                _spatialCol = value;
+                if (value.SelectString != "")
+                {
+                    _canExecute = true;
+                }
             }
         }
-        private string tblName;
+
+        private SelectionString _objidCol;
+        public SelectionString ObjidCol
+        {
+            get
+            {
+                if (_objidCol == null)
+                {
+                    _objidCol = new SelectionString();
+                }
+                return _objidCol;
+            }
+            set
+            {
+                _objidCol = value;
+                if (value.SelectString != "")
+                {
+                    _canExecute = true;
+                }
+            }
+        }
+
+        private SelectionString _totrecCount;
+        public SelectionString TotRecCount
+        {
+            get
+            {
+                if (_totrecCount == null)
+                {
+                    _totrecCount = new SelectionString();
+                }
+                return _totrecCount;
+            }
+            set
+            {
+                //get total record count
+                string qtst = "SELECT COUNT(*) FROM  " + _currentSchema + "." + _currenttable;
+                HanaCommand cmd2 = new HanaCommand(qtst, Globals.hanaConn);
+                HanaDataReader dr2 = null;
+                System.Windows.Forms.DataGrid dgResults2 = new System.Windows.Forms.DataGrid();
+                dr2 = cmd2.ExecuteReader();
+                string rc = "";
+                if (dr2 != null)
+                {
+                    DataTable dt2 = new DataTable();
+                    dt2.Load(dr2);
+                    if (dr2 != null)
+                    {
+                        if (dt2.Rows.Count > 0)
+                        {
+                            rc = dt2.Rows.Count.ToString();
+                        }
+                    }
+                }
+
+                _totrecCount = value;
+                if (value.SelectString != "")
+                {
+                    _canExecute = true;
+                }
+            }
+        }
+
+
+        private SelectionString _actrecCount;
+        public SelectionString ActRecCount
+        {
+            get
+            {
+                if (_actrecCount == null)
+                {
+                    _actrecCount = new SelectionString();
+                }
+                return _actrecCount;
+            }
+            set
+            {
+                _actrecCount = value;
+                if (value.SelectString != "")
+                {
+                    _canExecute = true;
+                }
+            }
+        }
+        private string _tblName;
         public string TblName
         {
-            get { return tblName; }
+            get { return _tblName; }
             set
             {
-                tblName = value;
+                _tblName = value;
                 //NotifyPropertyChanged("TblName");
             }
         }
-        private Boolean hasRows;
-        public Boolean HasRows
-        {
-            get { return hasRows; }
-            set
-            {
-                hasRows = value;
-                //NotifyPropertyChanged("HasRows");
-            }
-        }
-        private Boolean hasSql;
-        public Boolean HasSql
-        {
-            get { return hasSql; }
-            set
-            {
-                hasSql = value;
-                //NotifyPropertyChanged("HasSql");
-            }
-        }
-        //private int _reccount;
-        //public int recCount
-        //{
-        //    get { return _reccount; }
-        //    set
-        //    {
-        //        //get record count
-        //        string qtst = "SELECT COUNT(*) FROM  " + cboSchema.SelectedItem.ToString() + "." + cboTables.SelectedItem.ToString();
-        //        HanaCommand cmd2 = new HanaCommand(qtst, Globals.hanaConn);
-        //        HanaDataReader dr2 = null;
-        //        System.Windows.Forms.DataGrid dgResults2 = new System.Windows.Forms.DataGrid();
-        //        dr2 = cmd2.ExecuteReader();
-        //        if (dr2 != null)
-        //        {
-        //            DataTable dt2 = new DataTable();
-        //            dt2.Load(dr2);
-        //            if (dr2 != null)
-        //            {
-        //                if (dt2.Rows.Count > 0)
-        //                {
-        //                    recCount = dt2.Rows.Count;
-        //                }
-        //            }
-        //        }
-
-        //        _reccount = value;
-
-        //    }
-        //}
         
-        private TableViewerPanelViewModel selectedRow;
+        private TableViewerPanelViewModel _selectedRow;
         public TableViewerPanelViewModel SelectedRow
         {
-            get { return selectedRow; }
-            set { selectedRow = value; }
+            get { return _selectedRow; }
+            set { _selectedRow = value; }
         }
 
        
@@ -290,9 +385,10 @@ namespace SapHanaAddIn
             private set
             {
                 _results = value;
-                //NotifyPropertyChanged("Results");
+                NotifyPropertyChanged("Results");
             }
         }
+
         private SelectionString _querytext  ;
         public SelectionString QueryTxt
         { 
@@ -345,6 +441,7 @@ namespace SapHanaAddIn
         private bool _canExecute = true;
         public void MyAction()
         {
+            
             if (Globals.hanaConn == null || Globals.hanaConn.State != ConnectionState.Open)
             {
                 MessageBox.Show("Connect to a database first.", "Not connected");
@@ -357,25 +454,27 @@ namespace SapHanaAddIn
                 return;
             }
 
-            string qtest = qtest = txtSQLStatement;
-            if (spatialCol != "")
+            Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            string qtest =txtSQLStatement;
+
+            //get reccords
+            if (_spatialCol.SelectString != "" && _spatialCol.SelectString != "none")
             {
-                if (txtSQLStatement.IndexOf(spatialCol) > 0)
+                if (txtSQLStatement.IndexOf(_spatialCol.SelectString) > 0)
                 {
-                    qtest = txtSQLStatement.Replace(spatialCol, spatialCol + ".st_aswkt()" + " as " + spatialCol);
+                    qtest = txtSQLStatement.Replace(_spatialCol.SelectString, _spatialCol.SelectString + ".st_aswkt()" + " as " + _spatialCol.SelectString);
                 } 
                 else
                 {
                     qtest = txtSQLStatement;
                 }
             }
+
             HanaCommand cmd = new HanaCommand(qtest, Globals.hanaConn);
             HanaDataReader dr = null;
             System.Windows.Forms.DataGrid dgResults = new System.Windows.Forms.DataGrid();
             try
             {
-
-                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
                 dgResults.DataSource = null;
 
                dr = cmd.ExecuteReader();
@@ -389,11 +488,12 @@ namespace SapHanaAddIn
                     dt.Load(dr);
                     _results = dt.DefaultView;
                     if ( _results.Count>0)
-                    { hasRows = true; }
-                       
+                    {
+                        _actrecCount.SelectString = _results.Count.ToString();
+                    }
                     dr.Close();
                 }
-                else { hasRows = false; }
+
                 Mouse.OverrideCursor = null;
             }
             catch (Exception ex)
@@ -425,6 +525,7 @@ namespace SapHanaAddIn
             return _canExecute;
         }
 
+        
         public event EventHandler CanExecuteChanged;
 
         public void Execute(object parameter)

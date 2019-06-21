@@ -23,7 +23,17 @@ namespace SapHanaAddIn
         private static Dictionary<string, string> lstEnvNames = new Dictionary<string, string>();
         
         private static cboEnv comboBox;
-        public static cboEnv cboBox { get { return comboBox; } set { comboBox = value; } }
+        public static cboEnv cboBox
+        {
+            get
+            { return comboBox; }
+            set
+            {   //action here 
+                //update schemalist
+
+                comboBox = value;
+            }
+        }
         public cboEnv()
         {
             //setEnvs(this);
@@ -34,6 +44,7 @@ namespace SapHanaAddIn
         {
             FrameworkApplication.State.Deactivate("condition_state_notReady");
 
+           
             setEnvs(this);
             base.OnDropDownOpened();
         }
@@ -42,11 +53,13 @@ namespace SapHanaAddIn
         {
             await QueuedTask.Run(() =>
             {
+                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
                 cmb.Clear();
                 foreach (ConnectionItem item in HanaConfigModule.Current.ConnectionItems)
                 {
                     cmb.Add(new ComboBoxItem(item.name, item));
                 }
+                Mouse.OverrideCursor = null;
 
             });
         }
@@ -121,34 +134,57 @@ namespace SapHanaAddIn
                         wrapper3.Checked = false;
                     }
 
-                    //dispose of panel if it exists, so dropdowns all get reset.
-                    DockPane pne = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel");
-                    if (pne != null)
-                    {
-                        TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
-                        vm = null;
-                        pne = null;
-                    }
-
+                    //
                     ////clear schemas (it is bound)
-                    //if (Globals.collSchemas == null)
+                    //when a schema is selected, init the table cbo values
+                    //TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
+                    //IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper(vm);
+
+                    //if (vm != null)
                     //{
-                    //    Globals.collSchemas = new System.Collections.ObjectModel.Collection<string>();
+                    //    HanaCommand cmd = new HanaCommand("select * from schemas", Globals.hanaConn);
+                    //    HanaDataReader dr = cmd.ExecuteReader();
+                    //    vm.Schemas.Clear();
+                    //    while (dr.Read())
+                    //    {
+                    //        vm.Schemas.Add(dr.GetString(0));
+                    //    }
+                    //    dr.Close();
                     //}
 
-                    //Globals.collSchemas.Clear();
-                    //while (dr.Read())
-                    //{
-                    //    Globals.collSchemas.Add(dr.GetString(0));
-                    //}
-                    //dr.Close();
-                
-            }
+                }
                 catch (Exception ex)
                 {
-                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message);
-                     Mouse.OverrideCursor = null;
+                    FrameworkApplication.State.Deactivate("condition_state_hasProps");
+                    FrameworkApplication.State.Deactivate("condition_state_isconnected");
 
+                    IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
+                    if (wrapper != null)
+                    {
+                        wrapper.Caption = "Not Connected";
+                    }
+                    IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
+                    if (wrapper2 != null)
+                    {
+                        wrapper2.Caption = "Not Connected" ;
+                    }
+                    IPlugInWrapper wrapper3 = FrameworkApplication.GetPlugInWrapper("lblHasConnTrue");
+                    if (wrapper3 != null)
+                    {
+                        wrapper3.Caption = "Not Connected";
+                        wrapper3.Checked = false;
+                    }
+
+                    TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
+                    if (vm != null)
+                    {
+                        vm.Schemas.Clear();
+                    }
+
+                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Database or login was not valid. " + ex.Message);
+
+                    Mouse.OverrideCursor = null;
+                
             }
             Mouse.OverrideCursor = null;
 
