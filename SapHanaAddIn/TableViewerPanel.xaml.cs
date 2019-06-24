@@ -31,56 +31,28 @@ namespace SapHanaAddIn
         public string _actreccount = "";
         public string _totreccount = "";
         public string _querystring = "";
-        public string _tblname = "";
-        public string _tbls = ""; 
+        public string _currenttable = "";
+        public string _tbls = "";
 
         public TableViewerPanelView()
         {
+            // If the item is changed in cboenv, calls function. 
+            //cboEnv.CboEnvSelectionChanged += onSelectionChange;
             InitializeComponent();
-            Dispatcher.ShutdownStarted += Dispatcher_ShutdownStarted;
+
+            // set _this property here
+            //_this = this;
         }
-
-        private void Dispatcher_ShutdownStarted(object sender, EventArgs e)
-        {
-
-        }
-
-
-        //private void cboTables_Selected(object sender, RoutedEventArgs e)
+        //public void onSelectionChange(object source, EventArgs e)
         //{
-        //    //ComboBoxItem cmbi = ((sender as ComboBox).SelectedItem as ComboBoxItem);
-        //    //_tblname = cmbi.Content.ToString();
-        //}
+        //    // do
+        //    //Init();
 
-        //private void cboSchema_Selected(object sender, RoutedEventArgs e)
-        //{
-        //    try
-        //    {
-        //        ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
-        //        {
-        //            //when a schema is selected, init the table cbo values
-        //            //Task rs = retrieveTables();
-        //            HanaCommand cmd = new HanaCommand("SELECT table_name FROM sys.tables where schema_name = " + cboSchema.SelectedItem.ToString(), Globals.hanaConn);
-        //            HanaDataReader dr = cmd.ExecuteReader();
-        //            TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
-        //            vm._tables.Clear();
-        //            while (dr.Read())
-        //                    {
-        //                        vm._tables.Add(dr.GetString(1));
-        //                    }
-        //                    dr.Close();
-        //                    //Globals.collTables = _tables;
-
-        //            //and set the currentSchema
-        //            //HanaTables._currentSchema = Value;
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.ToString(),
-        //         "Failed to set table");
-        //    }
         //}
+        //private static TableViewerPanelView _this = null;
+        // static method to get reference to my DockpaneView instance
+        //static public TableViewerPanelView MyTableViewerPanelView => _this;
+
         private void btnExecute_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -113,12 +85,12 @@ namespace SapHanaAddIn
                 { _totreccount = (txtTotRecCount.Text); }
                 //if (txtActRecCount.Text != null)
                 //{ _actreccount = (txtActRecCount.Text); }
-                if (cboTables.SelectedItem != null)
-                { _tbls = cboTables.SelectedItem.ToString(); }
+                if (cboTables.Items != null)
+                { _tbls = cboTables.Items.ToString(); }
                 if (txtQueryText.Text != null)
                 { _querystring = txtQueryText.Text; }
-                if (cboTables.SelectedItem.ToString() != null)
-                { _tblname = cboTables.SelectedItem.ToString(); }
+                if (cboTables.SelectedValue.ToString() != null)
+                { _currenttable = cboTables.SelectedValue.ToString(); }
 
                 string qtest = "";
                 if (_spatialcolumn != "none" && _spatialcolumn != "")
@@ -189,35 +161,6 @@ namespace SapHanaAddIn
             Mouse.OverrideCursor = null;
         }
 
-
-        //private void btnAddTOC_Click(object sender, RoutedEventArgs e)
-        //{
-
-        //    if (MapView.Active != null)
-        //    {
-        //        //_spatialcolumn = lblSpatialCol.Content.ToString();
-        //        //_recCount = lblrecCount.Content;
-        //        //_querystring = txtQueryText.Text;
-        //        //_tblname = cboTables.SelectedItem.ToString();
-
-        //        //position - don't know why this doesn't work in xaml
-        //        //dgForResults.Height = this.ActualHeight * .7;
-        //        //dgForResults.Width = 500;
-        //        //dpForGrid.Width = 500;
-        //        //dpMain.Width = 500;
-
-
-        //            Task sssss = OpenEnterpriseGeodatabase();
-
-
-        //        return;
-        //    }
-        //    else
-        //    {
-        //        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Please activate a map");
-        //    }
-        //}
-
         private void btnAddTOC_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -240,12 +183,12 @@ namespace SapHanaAddIn
                     //{ _actreccount = (txtActRecCount.Text); }
                     if (txtTotRecCount.Text != null)
                     { _totreccount = (txtTotRecCount.Text); }
-                    if (cboTables.SelectedItem != null)
-                    { _tbls = cboTables.SelectedItem.ToString(); }
+                    if (cboTables.Items != null)
+                    { _tbls = cboTables.Items.ToString(); }
                     if (txtQueryText.Text != null)
                     { _querystring = txtQueryText.Text; }
-                    if (cboTables.SelectedItem.ToString() != null)
-                    { _tblname = cboTables.SelectedItem.ToString(); }
+                    if (cboTables.SelectedValue.ToString() != null)
+                    { _currenttable = cboTables.SelectedValue.ToString(); }
 
                     Task sssss = OpenEnterpriseGeodatabase();
                     return;
@@ -329,7 +272,7 @@ namespace SapHanaAddIn
                         int n = r.Next();
                         string s = n.ToString();
                         s = s.Substring(s.Length - 4);
-                        s = _tblname + "_" + s;
+                        s = _currenttable + "_" + s;
 
                         QueryDescription qds = db.GetQueryDescription(txtSQLStatement, "MySelect");// " select GEF_OBJECTID, GEF_OBJKEY, OBJNR, ERNAM, ERDAT, KTEXT, IDAT2, AENAM, ARTPR, GEF_SHAPE from JLUOSTARINEN.ORDERSWLINE", "MySelect");                                                                                                   
 

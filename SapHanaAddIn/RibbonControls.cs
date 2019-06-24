@@ -3,7 +3,6 @@ using ArcGIS.Core.Data;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
-using ArcGIS.Core.CIM;
 using ArcGIS.Desktop.Framework;
 using System;
 using System.Collections.Generic;
@@ -21,7 +20,8 @@ namespace SapHanaAddIn
     {
         public static Dictionary<string, string> conProps { get { return lstEnvNames; } set { lstEnvNames = value; } }
         private static Dictionary<string, string> lstEnvNames = new Dictionary<string, string>();
-        
+        //public class SEventArgs : EventArgs {public string sItem { get; set; }}
+
         private static cboEnv comboBox;
         public static cboEnv cboBox
         {
@@ -30,46 +30,28 @@ namespace SapHanaAddIn
             set
             {   //action here 
                 //update schemalist
-
-                comboBox = value;
+                //TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
+                //IPlugInWrapper dp = FrameworkApplication.GetPlugInWrapper("SapHanaAddIn_TableViewerPanel");
+                //if (vm != null)
+                //{
+                  //  //TableViewerPanelViewModel vm = (TableViewerPanelViewModel)dp;
+                    //
+                   // //clear properties
+                  //  vm.ActRecCount.SelectString = "";
+                    comboBox = value;
+                //}
             }
         }
         public cboEnv()
         {
             //setEnvs(this);
             cboBox = this;
-
-        }
-        protected override void OnDropDownOpened()
-        {
-            FrameworkApplication.State.Deactivate("condition_state_notReady");
-
-           
-            setEnvs(this);
-            base.OnDropDownOpened();
         }
 
-        public static async void setEnvs(cboEnv cmb)
-        {
-            await QueuedTask.Run(() =>
-            {
-                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-                cmb.Clear();
-                foreach (ConnectionItem item in HanaConfigModule.Current.ConnectionItems)
-                {
-                    cmb.Add(new ComboBoxItem(item.name, item));
-                }
-                Mouse.OverrideCursor = null;
-
-            });
-        }
-        public static string AddinAssemblyLocation()
-        {
-            var asm = System.Reflection.Assembly.GetExecutingAssembly();
-            return System.IO.Path.GetDirectoryName(
-                              Uri.UnescapeDataString(
-                                      new Uri(asm.CodeBase).LocalPath));
-        }
+        //// Defines a delegate of the TextChangedEventHandler.
+        //public delegate void SelectionChangedEventHandler(object source, SEventArgs e);
+        //// Defines an event of the TextChangedEventHandler.
+        //public static event SelectionChangedEventHandler CboEnvSelectionChanged;
         protected override async void OnSelectionChange(ComboBoxItem item)
         {
             await QueuedTask.Run(() =>
@@ -78,6 +60,9 @@ namespace SapHanaAddIn
                 {
                     Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
                     FrameworkApplication.State.Activate("condition_state_hasProps");
+
+                    // Raises the text changed event. 
+                    //CboEnvSelectionChanged(this, new SEventArgs() {sItem = SelectedItem.ToString()});
 
                     if (cboEnv.cboBox.SelectedItem == null)
                     {
@@ -94,10 +79,8 @@ namespace SapHanaAddIn
                     {
                         Globals.hanaConn.Close();
                         Globals.hanaConn = null;
+                        Globals.hanaConn = new HanaConnection();
                     }
-
-                    if (Globals.isHanaConn == null) { Globals.isHanaConn = new bool(); }
-                    else { Globals.isHanaConn = null; }
 
                     HanaPropertiesViewModel ass = new HanaPropertiesViewModel();
                     HanaPropertiesView dd = new HanaPropertiesView();
@@ -107,7 +90,6 @@ namespace SapHanaAddIn
                     string sss = itm.Text;
                     ConnectionItem connitem = itm.Icon as ConnectionItem;
                     Globals.hanaConn.ConnectionString = "Server=" + connitem.server;
-                    Globals.isHanaConn = true;
                     SecureString ss = new SecureString();
                     ss = connitem.pass;
                     ss.MakeReadOnly();
@@ -134,24 +116,51 @@ namespace SapHanaAddIn
                         wrapper3.Checked = false;
                     }
 
-                    //
-                    ////clear schemas (it is bound)
-                    //when a schema is selected, init the table cbo values
-                    //TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
-                    //IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper(vm);
+                    //cleanup if previous dockpane was open.  Can't delete/reinstantiate an instance of an esri dockpane.     
+                    bool dpexists = FrameworkApplication.DockPaneManager.IsDockPaneCreated("SapHanaAddIn_TableViewerPanel");
 
-                    //if (vm != null)
-                    //{
-                    //    HanaCommand cmd = new HanaCommand("select * from schemas", Globals.hanaConn);
-                    //    HanaDataReader dr = cmd.ExecuteReader();
-                    //    vm.Schemas.Clear();
-                    //    while (dr.Read())
-                    //    {
-                    //        vm.Schemas.Add(dr.GetString(0));
-                    //    }
-                    //    dr.Close();
-                    //}
+                    if (dpexists)
+                    {
+                        //TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
+                        //var dps = FrameworkApplication.DockPaneManager.DockPanes;
+                        //Find("SapHanaAddIn_TableViewerPanel");
 
+                        //TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
+                        //IPlugInWrapper dp = FrameworkApplication.GetPlugInWrapper("SapHanaAddIn_TableViewerPanel");
+                        //dp.
+                        //Object ll = ass.;
+                        //Object pnl = TableViewerPanelView.MyTableViewerPanelView;
+                        //string s1 = pnl.Content.ToString();
+                        //bool b = pnl.IsVisible;
+                        //TableViewerPanelViewModel vm = (TableViewerPanelViewModel)pnl;
+
+                        //object o = pnl.DataContext;
+                        //TableViewerPanelViewModel vm = o as TableViewerPanelViewModel;
+                        //pnl.Sch vm.Schemas.Clear();
+                        //    vm.Tables.Clear();
+                        //    vm.CurrentSchema = "";
+                        //    vm.CurrentTable = "";
+                        //    vm.Results.Table.Clear();
+                        //    vm.SpatialCol.SelectString = "";
+                        //    vm.ObjidCol.SelectString = "";
+                        //    vm.TotRecCount.SelectString = "";
+                        //    vm.QueryTxt.SelectString = "";
+                        //    vm.ActRecCount.SelectString = "";
+
+                        //////when a schema is selected, init the table cbo values
+                        //if (vm != null)
+                        //{
+                        //    HanaCommand cmd = new HanaCommand("select * from schemas", Globals.hanaConn);
+                        //    HanaDataReader dr = cmd.ExecuteReader();
+
+                        //    while (dr.Read())
+                        //    {
+                        //        vm.Schemas.Add(dr.GetString(0));
+                        //    }
+                        //    dr.Close();
+                        //}
+
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -166,7 +175,7 @@ namespace SapHanaAddIn
                     IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
                     if (wrapper2 != null)
                     {
-                        wrapper2.Caption = "Not Connected" ;
+                        wrapper2.Caption = "Not Connected";
                     }
                     IPlugInWrapper wrapper3 = FrameworkApplication.GetPlugInWrapper("lblHasConnTrue");
                     if (wrapper3 != null)
@@ -175,23 +184,42 @@ namespace SapHanaAddIn
                         wrapper3.Checked = false;
                     }
 
-                    TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
-                    if (vm != null)
-                    {
-                        vm.Schemas.Clear();
-                    }
-
                     ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Database or login was not valid. " + ex.Message);
 
-                    Mouse.OverrideCursor = null;
-                
-            }
-            Mouse.OverrideCursor = null;
-
+                }
             });
             Mouse.OverrideCursor = null;
         }
+        protected override void OnDropDownOpened()
+        {
+            setEnvs(this);
+            base.OnDropDownOpened();
+        }
+
+        public static async void setEnvs(cboEnv cmb)
+        {
+            await QueuedTask.Run(() =>
+            {
+                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+                cmb.Clear();
+                foreach (ConnectionItem item in HanaConfigModule.Current.ConnectionItems)
+                {
+                    cmb.Add(new ComboBoxItem(item.name, item));
+                }
+                Mouse.OverrideCursor = null;
+
+            });
+        }
+        public static string AddinAssemblyLocation()
+        {
+            var asm = System.Reflection.Assembly.GetExecutingAssembly();
+            return System.IO.Path.GetDirectoryName(
+                              Uri.UnescapeDataString(
+                                      new Uri(asm.CodeBase).LocalPath));
+        }
+       
     }
+
     public class btnSqlExplorer : Button
         {
             protected override void OnClick()

@@ -9,7 +9,8 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using System.Data;
 using System.ComponentModel;
-using System.Security;
+using ArcGIS.Desktop.Framework.Events;
+using ArcGIS.Desktop.Mapping.Events;
 
 namespace SapHanaAddIn
 {
@@ -18,36 +19,10 @@ namespace SapHanaAddIn
         public const string _dockPaneID = "SapHanaAddIn_TableViewerPanel";
         protected TableViewerPanelViewModel()
         {
-            //HTables = new ObservableCollection<HanaTables>();
             try
             {
-                //dispose of panel if it exists, so dropdowns all get reset.
-                //DockPane pne = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel");
-                //if (pne != null)
-                // {
-                //TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
-                //vm = null;
-                //pne = null;
-                //}
-
-                //HanaPropertiesViewModel ass = new HanaPropertiesViewModel();
-                //HanaPropertiesView dd = new HanaPropertiesView();
-                //string fff = ass.ModuleSetting2;
-                //HanaConfigModule sds = HanaConfigModule.Current;
-                //ComboBoxItem itm = (ComboBoxItem)cboEnv.cboBox.SelectedItem;
-                //string sss = itm.Text;
-                //ConnectionItem connitem = itm.Icon as ConnectionItem;
-                //Globals.hanaConn.ConnectionString = "Server=" + connitem.server;
-                //Globals.isHanaConn = true;
-                //SecureString ss = new SecureString();
-                //ss = connitem.pass;
-                //ss.MakeReadOnly();
-                //HanaCredential hcr = new HanaCredential(connitem.userid, ss);
-                //Globals.hanaConn.Credential = hcr;
-                //Globals.hanaConn.Open();
-
                 //set schemas for dropdown
-                HanaCommand cmd = new HanaCommand("select TOP 2000 * from schemas", Globals.hanaConn);
+                HanaCommand cmd = new HanaCommand("select TOP 1000 * from schemas", Globals.hanaConn);
                 HanaDataReader dr = cmd.ExecuteReader();
                 this._schemas.Clear();
                 while (dr.Read())
@@ -61,13 +36,40 @@ namespace SapHanaAddIn
             {
                 ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message, "Failed to initialize table drop down.");
             }
-
         }
         protected override Task InitializeAsync()
-        {
+        { 
             return base.InitializeAsync();
         }
 
+        /// <summary>
+        /// Called if the item is changed in cboenv.  
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="e"></param>
+       
+        //private ArcGIS.Core.Events.SubscriptionToken _eventToken = null;
+        //Action<PaneEventArgs> OnActivePaneChangedEvent;
+        // Called when the visibility of the DockPane changes.
+        //protected override void OnShow(bool isVisible)
+        //{
+        //    if (isVisible && _eventToken == null) //Subscribe to event when dockpane is visible
+        //    {
+
+        //        this.Init();
+        //        _eventToken = ActivePaneChangedEvent.Subscribe(OnActivePaneChangedEvent);
+        //    }
+
+        //    if (!isVisible && _eventToken != null) //Unsubscribe as the dockpane closes.
+        //    {
+        //        //ActivePaneChangedEvent.Unsubscribe(_eventToken);
+        //        _eventToken = null;
+        //    }
+        //}
+        //private void OnActivePaneChanged(PaneEventArgs obj)
+        //{
+        //    Init();
+        //}
         internal static void Show()
         {
             DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
@@ -76,17 +78,28 @@ namespace SapHanaAddIn
 
             pane.Activate();
         }
-        protected override void OnHidden()
+
+        public void Init()
         {
-            //clear stuff out
-            //_tables.Clear();
-            //_schemas.Clear();
-            //_currenttable = "";
-            //_currentSchema = "";
-            //_results = null;
-            //_querytext.SelectString = "";
-            //_objidCol.SelectString = "";
-            //_spatialCol.SelectString = "";
+            ////clear stuff out
+            _tables.Clear();
+            _schemas.Clear();
+            if (_currenttable != "") { _currenttable = ""; }
+            if (_currentSchema != "") { _currentSchema = ""; }
+            if (_results != null) { _results.Table.Clear(); }
+            if (_querytext != null) { _querytext.SelectString = ""; }
+            if (_objidCol != null) { _objidCol.SelectString = ""; }
+            if (_spatialCol != null) { _spatialCol.SelectString = ""; }
+
+            //set schemas for dropdown
+            HanaCommand cmd = new HanaCommand("select TOP 10 * from schemas", Globals.hanaConn);
+            HanaDataReader dr = cmd.ExecuteReader();
+            while (dr.Read())
+            {
+                _schemas.Add(dr.GetString(0));
+            }
+            dr.Close();
+
         }
 
         private ObservableCollection<string> _schemas = new ObservableCollection<string>();
@@ -98,15 +111,14 @@ namespace SapHanaAddIn
             }
             set
             {
-                //HanaCommand cmd = new HanaCommand("select * from schemas", Globals.hanaConn);
-                //HanaDataReader dr = cmd.ExecuteReader();
-                //this._schemas.Clear();
-                //while (dr.Read())
-                //{
-                //    _schemas.Add(dr.GetString(0));
-                //}
-                //dr.Close();
-                //Task rs = retrieveSchemas();
+                HanaCommand cmd = new HanaCommand("select * from schemas", Globals.hanaConn);
+                HanaDataReader dr = cmd.ExecuteReader();
+                this._schemas.Clear();
+                while (dr.Read())
+                {
+                    _schemas.Add(dr.GetString(0));
+                }
+                dr.Close();
                 _schemas = value;
             }
         }
@@ -119,16 +131,16 @@ namespace SapHanaAddIn
             }
             set
             {
-                ////_tables = value;
-                //HanaCommand cmd = new HanaCommand("SELECT schema_name,table_name FROM sys.tables where schema_name = '" + value + "'", Globals.hanaConn);
-                //HanaDataReader dr = cmd.ExecuteReader();
-                ////comboBoxTables.Items.Clear();
-                //_tables.Clear();
-                //while (dr.Read())
-                //{
-                //    _tables.Add(dr.GetString(1));
-                //}
-                //dr.Close();
+                //_tables = value;
+                HanaCommand cmd = new HanaCommand("SELECT schema_name,table_name FROM sys.tables where schema_name = '" + value + "'", Globals.hanaConn);
+                HanaDataReader dr = cmd.ExecuteReader();
+                //comboBoxTables.Items.Clear();
+                _tables.Clear();
+                while (dr.Read())
+                {
+                    _tables.Add(dr.GetString(1));
+                }
+                dr.Close();
                 _tables = value;
             }
         }
@@ -146,20 +158,20 @@ namespace SapHanaAddIn
         private void RaisePropertyChanged(string currentSchema)
         {
             Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-            
+
             //clear stuff out
-            _tables.Clear();
-            _currenttable = "";
-            _results = null;
-            _querytext.SelectString = "";
-            _objidCol.SelectString = "";
-            _spatialCol.SelectString = "";
-            //_actrecCount.SelectString = "";
-            _totrecCount.SelectString = "";
+            //_tables.Clear();
+            //_currenttable = "";
+            //_results = null;
+            //_querytext.SelectString = "";
+            //_objidCol.SelectString = "";
+            //_spatialCol.SelectString = "";
+            ////_actrecCount.SelectString = "";
+            //_totrecCount.SelectString = "";
 
 
             //set table list
-            HanaCommand cmd = new HanaCommand("SELECT TOP 2000 table_name FROM sys.tables where schema_name = '" + currentSchema + "'", Globals.hanaConn);
+            HanaCommand cmd = new HanaCommand("SELECT TOP 10 table_name FROM sys.tables where schema_name = '" + currentSchema + "'", Globals.hanaConn);
             HanaDataReader dr = cmd.ExecuteReader();
             while (dr.Read())
             {
@@ -202,7 +214,7 @@ namespace SapHanaAddIn
 
                 //set initial querytext string
                 _querytext.SelectString = "";
-                _querytext.SelectString = "SELECT TOP 2000 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSchema + "\".\"" + value + "\"";
+                _querytext.SelectString = "SELECT TOP 100 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSchema + "\".\"" + value + "\"";
 
                 //find spatial column
                 SpatialCol.SelectString = "";
@@ -335,7 +347,6 @@ namespace SapHanaAddIn
             }
         }
 
-
         private SelectionString _actrecCount;
         public SelectionString ActRecCount
         {
@@ -356,24 +367,6 @@ namespace SapHanaAddIn
                 }
             }
         }
-        private string _tblName;
-        public string TblName
-        {
-            get { return _tblName; }
-            set
-            {
-                _tblName = value;
-                //NotifyPropertyChanged("TblName");
-            }
-        }
-        
-        private TableViewerPanelViewModel _selectedRow;
-        public TableViewerPanelViewModel SelectedRow
-        {
-            get { return _selectedRow; }
-            set { _selectedRow = value; }
-        }
-
        
         private DataView _results;
         public DataView Results
@@ -544,13 +537,13 @@ namespace SapHanaAddIn
     /// <summary>
     /// Button implementation to show the DockPane.
     /// </summary>
-    internal class TableViewerPanel_ShowButton : System.Windows.Controls.Button
-    {
-        protected override void OnClick()
-        {
-            TableViewerPanelViewModel.Show();
-        }
-    }
+    //internal class TableViewerPanel_ShowButton : System.Windows.Controls.Button
+    //{
+    //    protected override void OnClick()
+    //    {
+    //        TableViewerPanelViewModel.Show();
+    //    }
+    //}
 
    
 }
