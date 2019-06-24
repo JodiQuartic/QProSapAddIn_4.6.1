@@ -8,6 +8,7 @@ namespace SapHanaAddIn
 
         //-----------------modifiable
         public static Sap.Data.Hana.HanaConnection hanaConn { get; set; }
+        public static System.Collections.ObjectModel.ObservableCollection<string> Schemas { get; set; }
 
     }
 }
