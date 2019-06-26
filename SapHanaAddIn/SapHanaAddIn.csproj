@@ -127,6 +127,7 @@
     <AddInContent Include="Images\VersionConflictsWindow32.png" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="WaitCursor.cs" />
     <Compile Include="ConnectionItem.cs" />
     <Compile Include="Daml.cs" />
     <Compile Include="Globals.cs" />

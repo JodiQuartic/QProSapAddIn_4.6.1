@@ -11,112 +11,264 @@ using System.Data;
 using System.ComponentModel;
 using ArcGIS.Desktop.Framework.Events;
 
+
 namespace SapHanaAddIn
 {
     internal class TableViewerPanelViewModel : DockPane, INotifyPropertyChanged
     {
         public const string _dockPaneID = "SapHanaAddIn_TableViewerPanel";
+        private object _schemasLock = new object();
+        private object _tablesLock = new object();
+        private object _resultsLock = new object();
+       
         protected TableViewerPanelViewModel()
         {
-            //refresh schemas
-            ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            //See blog http://10rem.net/blog/2012/01/20/wpf-45-cross-thread-collection-synchronization-redux
+            System.Windows.Data.BindingOperations.EnableCollectionSynchronization(Schemas, _schemasLock);
+            System.Windows.Data.BindingOperations.EnableCollectionSynchronization(Tables, _tablesLock);
+
+            try
             {
-                try
+                if (Globals.hanaConn == null || Globals.hanaConn.State == System.Data.ConnectionState.Closed)
                 {
-                    //set schemas for dropdown
-                    HanaCommand cmd = new HanaCommand("select TOP 1000 * from schemas", Globals.hanaConn);
+                    MessageBox.Show("Select an environment first.", "No environment is selected.");
+                    return;
+                }
+                else
+                {
+                    HanaCommand cmd = new HanaCommand("select * from schemas", Globals.hanaConn);
                     HanaDataReader dr = cmd.ExecuteReader();
-                    Globals.Schemas.Clear();
+                    _schemas.Clear();
                     while (dr.Read())
                     {
-                        Globals.Schemas.Add(dr.GetString(0));
+                        _schemas.Add(dr.GetString(0));
                     }
                     dr.Close();
+                    //_schemas = Globals.GSchemas;
 
                 }
-                catch (Exception ex)
-                {
-                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error in OnDropDownOpened. " + ex.Message);
-                }
-            });
+
+                
+            }
+            catch (HanaException ex)
+            {
+                MessageBox.Show(ex.Errors[0].Source + " : " + ex.Errors[0].Message + " (" +
+                 ex.Errors[0].NativeError.ToString() + ")",
+                 "Failed to initialize table drop down.");
+            }
         }
 
         internal static void Show()
         {
             DockPane pane = FrameworkApplication.DockPaneManager.Find(_dockPaneID);
             if (pane == null)
+            {
                 return;
-
+            }
+            else
+            {
             pane.Activate();
+            }
+        }
+        protected override Task InitializeAsync()
+        {
+            ////on first show set the schemas from the cboEnv setting of global var
+            //if (Globals.GSchemas.Count > 0)
+            //{
+            //    //lock (_schemasLock)
+            //    //{ 
+            //    Schemas = Globals.GSchemas;
+            //    //}
+            //}
+
+            return base.InitializeAsync();
         }
 
-        private void OnActivePaneChanged(PaneEventArgs obj)
+        public async void RefreshSchemas()
         {
-            //refresh panel
+            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            {
+                try
+                    {
+                        //set schemas for dropdown
+                        HanaCommand cmd = new HanaCommand("select TOP 1000 * from schemas", Globals.hanaConn);
+                        HanaDataReader dr = cmd.ExecuteReader();
+                        lock (_schemasLock)
+                        {
+                            this.Schemas.Clear();
+                            while (dr.Read())
+                            {
+                                Schemas.Add(dr.GetString(0));
+                            }
+                        }
+                        dr.Close();
+                    }
+                    catch (Exception ex)
+                    {
+                        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error Adding Schemas. " + ex.Message);
+                    }
+            });
+        }
+        public async void RefreshTables()
+        {
+            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            {
+                using (new WaitCursor())
+                {
+                try
+                {
+                    //set schemas for dropdown
+                    HanaCommand cmd = new HanaCommand("SELECT table_name FROM sys.tables where schema_name = '" + _currentSchema + "'", Globals.hanaConn);
+                    HanaDataReader dr = cmd.ExecuteReader();
+                    lock (_tablesLock)
+                    {
+                        this.Tables.Clear();
+                        while (dr.Read())
+                        {
+                            Tables.Add(dr.GetString(0));
+                        }
+                    }
+                    dr.Close();
+                }
+                catch (Exception ex)
+                {
+                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error Adding Tables. " + ex.Message);
+                }
+                }  //end waitcursor
+            });
+        }
+        public async void SetPropertiesForTable()
+        {
             Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-            ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            {
+            using (new WaitCursor())
             {
                 try
                 {
-                    //refresh schemas
-                    ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+                    //clear stuff out
+                    _results = null;
+                    _querytext.SelectString = "";
+                    _objidCol.SelectString = "";
+                    _spatialCol.SelectString = "";
+                    //_actrecCount.SelectString = "";
+                    _totrecCount.SelectString = "";
+
+                   //get field names
+                    HanaCommand cmd = new HanaCommand("select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "'", Globals.hanaConn);
+                    HanaDataReader dr = cmd.ExecuteReader();
+                    List<string> colls = new List<string>();
+                    while (dr.Read())
                     {
-                        try
+                        //fix bug with slash in column namestring
+                        if (dr.GetString(0).IndexOfAny(new char[] { ' ', '/', '\\' }) != -1)
                         {
-                            //set schemas for dropdown
-                            HanaCommand cmd = new HanaCommand("select TOP 1000 * from schemas", Globals.hanaConn);
-                            HanaDataReader dr = cmd.ExecuteReader();
-                            Globals.Schemas.Clear();
-                            while (dr.Read())
-                            {
-                                Globals.Schemas.Add(dr.GetString(0));
-                            }
-                            dr.Close();
-
+                            var s = '"' + dr.GetString(0) + '"';
+                            colls.Add(s);
                         }
-                        catch (Exception ex)
-                        {
-                            ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error in OnDropDownOpened. " + ex.Message);
-                        }
-                    });
-
-                    //cleanup if dockpane was already open.  Can't delete/reinstantiate an instance of an esri dockpane.     
-                    bool dpexists = FrameworkApplication.DockPaneManager.IsDockPaneCreated("SapHanaAddIn_TableViewerPanel");
-                    if (dpexists)
-                    {
-                        TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
-
-                        if (vm.Tables != null) { vm.Tables.Clear(); }
-                        if (vm.CurrentTable != null) { vm.CurrentTable = ""; }
-                        if (vm.CurrentSchema != null) { vm.CurrentSchema = ""; }
-                        if (vm.Results != null) { vm.Results.Table.Clear(); }
-                        if (vm.QueryTxt != null) { vm.QueryTxt.SelectString = ""; }
-                        if (vm.ObjidCol != null) { vm.ObjidCol.SelectString = ""; }
-                        if (vm.SpatialCol.SelectString != null) { vm.SpatialCol.SelectString = ""; }
-                        if (vm.ActRecCount != null) { vm.ActRecCount.SelectString = ""; }
-                        if (vm.TotRecCount != null) { vm.TotRecCount.SelectString = ""; }
-
+                        else
+                        { colls.Add(dr.GetString(0)); }
                     }
+                    dr.Close();
+
+                    //set initial querytext string
+                    _querytext.SelectString = "";
+                    _querytext.SelectString = "SELECT TOP 1000 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSchema + "\".\"" + _currentTable + "\"";
+
+                    //find spatial column
+                    SpatialCol.SelectString = "";
+                    cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "' and data_type_id = 29812";
+                    dr = cmd.ExecuteReader();
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            _spatialCol.SelectString = dr.GetString(0);
+                        }
+                    }
+                    else
+                    {
+                        _spatialCol.SelectString = "none";
+                    }
+                    dr.Close();
+
+                    //find objectid
+                    cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "' and COLUMN_NAME = 'OBJECTID'";
+                    dr = cmd.ExecuteReader();
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            _objidCol.SelectString = dr.GetString(0);
+                        }
+                    }
+                    else
+                    {
+                        _objidCol.SelectString = "none";
+                    }
+                    dr.Close();
+
                 }
                 catch (Exception ex)
                 {
                     FrameworkApplication.State.Deactivate("condition_state_hasProps");
                     FrameworkApplication.State.Deactivate("condition_state_isconnected");
-
-                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message);
-
+                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error in SetPropertiesForTable. " + ex.Message);
                 }
+                }  //end waitcursor
             });
-            Mouse.OverrideCursor = null;
+
+                Mouse.OverrideCursor = null;
         }
 
-        protected override Task InitializeAsync()
+        //private void RefreshProperties()
+        //{   
+        //    Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+        //    ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+        //    {
+        //        try
+        //        {
+        //            //if dockpane was already open then cleanup.  Can't delete/reinstantiate an instance of an esri dockpane.     
+        //            bool dpexists = FrameworkApplication.DockPaneManager.IsDockPaneCreated("SapHanaAddIn_TableViewerPanel");
+        //            if (dpexists)
+        //            {
+        //                TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
+
+        //                if (vm.CurrentTable != null) { vm.CurrentTable = ""; }
+        //                if (vm.CurrentSchema != null) { vm.CurrentSchema = ""; }
+        //                if (vm.QueryTxt != null) { vm.QueryTxt.SelectString = ""; }
+        //                if (vm.ObjidCol != null) { vm.ObjidCol.SelectString = ""; }
+        //                if (vm.SpatialCol != null) { vm.SpatialCol.SelectString = ""; }
+        //                if (vm.ActRecCount != null) { vm.ActRecCount.SelectString = ""; }
+        //                if (vm.TotRecCount != null) { vm.TotRecCount.SelectString = ""; }
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            FrameworkApplication.State.Deactivate("condition_state_hasProps");
+        //            FrameworkApplication.State.Deactivate("condition_state_isconnected");
+        //            ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message);
+        //        }
+        //    });
+        //    Mouse.OverrideCursor = null;
+        //}
+        public async void GetActualResultCount()
         {
-            return base.InitializeAsync();
+            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            {
+                try
+                {
+                    //get actual count
+                    //TotRecCount.SelectString = "";
+                }
+                catch (Exception ex)
+                {
+                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error Adding Tables. " + ex.Message);
+                }
+            });
         }
 
         #region Dockpane Properties
-
         private string _heading = "Search with SQL";
         public string Heading
         {
@@ -137,6 +289,15 @@ namespace SapHanaAddIn
             }
         }
 
+        private ObservableCollection<string> _schemas = new ObservableCollection<string>();
+        public ObservableCollection<string> Schemas
+        {
+            get
+            {
+                return _schemas;
+            }
+        }
+
         private ObservableCollection<string> _tables = new ObservableCollection<string>();
         public ObservableCollection<string> Tables
         {
@@ -144,19 +305,28 @@ namespace SapHanaAddIn
             {
                 return _tables;
             }
+        }
+
+        private string _currentSchema;
+        public string CurrentSchema
+        {
+            get { return _currentSchema; }
             set
             {
-                //_tables = value;
-                HanaCommand cmd = new HanaCommand("SELECT schema_name,table_name FROM sys.tables where schema_name = '" + value + "'", Globals.hanaConn);
-                HanaDataReader dr = cmd.ExecuteReader();
-                //comboBoxTables.Items.Clear();
-                _tables.Clear();
-                while (dr.Read())
-                {
-                    _tables.Add(dr.GetString(1));
-                }
-                dr.Close();
-                _tables = value;
+                _currentSchema = value;
+                //Thread.Sleep(500);
+                RefreshTables();
+            }
+        }
+
+        private string _currentTable;
+        public string CurrentTable
+        {
+            get { return _currentTable; }
+            set
+            {
+                _currentTable = value;
+                SetPropertiesForTable();
             }
         }
         private DataView _results;
@@ -191,120 +361,6 @@ namespace SapHanaAddIn
                 {
                     _canExecute = true;
                 }
-
-
-            }
-        }
-
-        private string _currentSchema;
-        public string CurrentSchema
-        {
-            get { return _currentSchema; }
-            set
-            {
-                _currentSchema = value;
-                RaisePropertyChanged(CurrentSchema);
-            }
-        }
-        private void RaisePropertyChanged(string currentSchema)
-        {
-            Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-
-            //set table list
-            HanaCommand cmd = new HanaCommand("SELECT TOP 10 table_name FROM sys.tables where schema_name = '" + currentSchema + "'", Globals.hanaConn);
-            HanaDataReader dr = cmd.ExecuteReader();
-            while (dr.Read())
-            {
-                _tables.Add(dr.GetString(0));
-            }
-            dr.Close();
-            Mouse.OverrideCursor = null;
-        }
-
-        private string _currentTable;
-        public string CurrentTable
-        {
-            get { return _currentTable; }
-            set
-            {
-                //clear stuff out
-                _results = null;
-                _querytext.SelectString = "";
-                _objidCol.SelectString = "";
-                _spatialCol.SelectString = "";
-                //_actrecCount.SelectString = "";
-                _totrecCount.SelectString = "";
-
-                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-                HanaCommand cmd = new HanaCommand("select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + value + "'", Globals.hanaConn);
-                HanaDataReader dr = cmd.ExecuteReader();
-                List<string> colls = new List<string>();
-                while (dr.Read())
-                {
-                    //fix bug with slash in column namestring
-                    if (dr.GetString(0).IndexOfAny(new char[] { ' ', '/', '\\' }) != -1)
-                    {
-                        var s = '"' + dr.GetString(0) + '"';
-                        colls.Add(s);
-                    }
-                    else
-                    { colls.Add(dr.GetString(0)); }
-                }
-                dr.Close();
-
-                //set initial querytext string
-                _querytext.SelectString = "";
-                _querytext.SelectString = "SELECT TOP 100 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSchema + "\".\"" + value + "\"";
-
-                //find spatial column
-                SpatialCol.SelectString = "";
-                cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + value + "' and data_type_id = 29812";
-                dr = cmd.ExecuteReader();
-                if (dr.HasRows)
-                {
-                    while (dr.Read())
-                    {
-                        _spatialCol.SelectString = dr.GetString(0);
-                    }
-                }
-                else
-                { _spatialCol.SelectString = "none"; }
-                dr.Close();
-
-                //find objectid
-                cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + value + "' and COLUMN_NAME = 'OBJECTID'";
-                dr = cmd.ExecuteReader();
-                if (dr.HasRows)
-                {
-                    while (dr.Read())
-                    {
-                        _objidCol.SelectString = dr.GetString(0);
-                    }
-                }
-                else
-                { _objidCol.SelectString = "none"; }
-                dr.Close();
-
-                //get actual count
-                TotRecCount.SelectString = "";
-                cmd.CommandText = "SELECT COUNT(*) FROM \"" + _currentSchema + "\".\"" + value + "\"";
-                dr = cmd.ExecuteReader();
-                if (dr.HasRows)
-                {
-                    while (dr.Read())
-                    {
-                        _totrecCount.SelectString = dr.GetString(0);
-                    }
-                }
-                else
-                { _totrecCount.SelectString = ""; }
-                dr.Close();
-
-                Mouse.OverrideCursor = null;
-
-
-                _currentTable = value;
-
             }
         }
 
@@ -404,14 +460,15 @@ namespace SapHanaAddIn
             }
             set
             {
-                _actrecCount = value;
+                
                 if (value.SelectString != "")
                 {
                     _canExecute = true;
                 }
+
+                _actrecCount = value;
             }
         }
-
         #endregion
 
         private ICommand _executeselect;
@@ -494,7 +551,6 @@ namespace SapHanaAddIn
         }
     }
 
-
     public class btnSqlExplorer : Button
     {
         protected override void OnClick()
@@ -502,204 +558,159 @@ namespace SapHanaAddIn
             TableViewerPanelViewModel.Show();
         }
     }
-    public class cboEnv : ComboBox
+
+#region cboEnv Class
+public class cboEnv : ComboBox
+{
+    private static cboEnv comboBox;
+    public static cboEnv cboBox
     {
-        private static cboEnv comboBox;
-        public static cboEnv cboBox
+        get
+        { return comboBox; }
+        set
         {
-            get
-            { return comboBox; }
-            set
-            {
-                comboBox = value;
-            }
+            comboBox = value;
         }
-        public cboEnv()
+    }
+    public cboEnv()
+    {
+        cboBox = this;
+    }
+    protected override async void OnSelectionChange(ComboBoxItem item)
+    {
+        Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+        await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
         {
-            cboBox = this;
-        }
-        protected override void OnSelectionChange(ComboBoxItem item)
-        {
-            Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-            ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            try
             {
-                try
-                {
+                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+                FrameworkApplication.State.Activate("condition_state_hasProps");
 
-                    FrameworkApplication.State.Activate("condition_state_hasProps");
-
-                    if (cboEnv.cboBox.SelectedItem == null)
-                    {
-                        FrameworkApplication.State.Deactivate("condition_state_hasProps");
-                        return;
-                    }
-
-                    //recreate connection each time cboenv changes 
-                    if (Globals.hanaConn == null)
-                    {
-                        Globals.hanaConn = new HanaConnection();
-                    }
-                    else
-                    {
-                        Globals.hanaConn.Close();
-                        Globals.hanaConn = null;
-                        Globals.hanaConn = new HanaConnection();
-                    }
-
-                    ComboBoxItem itm = (ComboBoxItem)cboEnv.cboBox.SelectedItem;
-                    string txtitm = itm.Text;
-                    ConnectionItem connitem = itm.Icon as ConnectionItem;
-                    Globals.hanaConn.ConnectionString = "Server=" + connitem.server;
-                    System.Security.SecureString ss = new System.Security.SecureString();
-                    ss = connitem.pass;
-                    ss.MakeReadOnly();
-                    HanaCredential hcr = new HanaCredential(connitem.userid, ss);
-                    Globals.hanaConn.Credential = hcr;
-                    Globals.hanaConn.Open();
-
-                    FrameworkApplication.State.Activate("condition_state_isconnected");
-                    IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
-
-                    if (wrapper != null)
-                    {
-                        wrapper.Caption = "Connected";
-                    }
-                    IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
-                    if (wrapper2 != null)
-                    {
-                        wrapper2.Caption = "Connected to " + txtitm;
-                    }
-                    IPlugInWrapper wrapper3 = FrameworkApplication.GetPlugInWrapper("lblHasConnTrue");
-                    if (wrapper3 != null)
-                    {
-                        wrapper3.Caption = "Connected to " + txtitm;
-                        wrapper3.Checked = false;
-                    }
-
-                }
-                catch (Exception ex)
+                if (cboEnv.cboBox.SelectedItem == null)
                 {
                     FrameworkApplication.State.Deactivate("condition_state_hasProps");
-                    FrameworkApplication.State.Deactivate("condition_state_isconnected");
-
-                    IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
-                    if (wrapper != null)
-                    {
-                        wrapper.Caption = "Not Connected";
-                    }
-                    IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
-                    if (wrapper2 != null)
-                    {
-                        wrapper2.Caption = "Not Connected";
-                    }
-                    IPlugInWrapper wrapper3 = FrameworkApplication.GetPlugInWrapper("lblHasConnTrue");
-                    if (wrapper3 != null)
-                    {
-                        wrapper3.Caption = "Not Connected";
-                        wrapper3.Checked = false;
-                    }
-
-                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error in OnSelectionChanged. " + ex.Message);
+                    return;
                 }
 
-            });
-            Mouse.OverrideCursor = null;
+                //recreate connection each time cboenv changes 
+                if (Globals.hanaConn == null)
+                {
+                    Globals.hanaConn = new HanaConnection();
+                }
+                else
+                {
+                    Globals.hanaConn.Close();
+                    Globals.hanaConn = null;
+                    Globals.hanaConn = new HanaConnection();
+                }
 
-        }
-        protected override async void OnDropDownOpened()
-        {
+                ComboBoxItem itm = (ComboBoxItem)cboEnv.cboBox.SelectedItem;
+                string txtitm = itm.Text;
+                ConnectionItem connitem = itm.Icon as ConnectionItem;
+                Globals.hanaConn.ConnectionString = "Server=" + connitem.server;
+                System.Security.SecureString ss = new System.Security.SecureString();
+                ss = connitem.pass;
+                ss.MakeReadOnly();
+                HanaCredential hcr = new HanaCredential(connitem.userid, ss);
+                Globals.hanaConn.Credential = hcr;
+                Globals.hanaConn.Open();
 
-            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+                FrameworkApplication.State.Activate("condition_state_isconnected");
+                IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
+
+                if (wrapper != null)
+                {
+                    wrapper.Caption = "Connected";
+                }
+                IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
+                if (wrapper2 != null)
+                {
+                    wrapper2.Caption = "Connected to " + txtitm;
+                }
+                IPlugInWrapper wrapper3 = FrameworkApplication.GetPlugInWrapper("lblHasConnTrue");
+                if (wrapper3 != null)
+                {
+                    wrapper3.Caption = "Connected to " + txtitm;
+                    wrapper3.Checked = false;
+                }
+
+                ////cleanup if dockpane was already open.  Can't delete/reinstantiate an instance of an esri dockpane.
+                ////var panes = ProApp.Panes.FindLayoutPanes(findLyt);
+                ////foreach (Pane pane in panes)
+                ////{
+                ////    ProApp.Panes.CloseLayoutPanes(findLyt.URI);  //Close the pane
+                ////}
+                bool dpexists = FrameworkApplication.DockPaneManager.IsDockPaneCreated("SapHanaAddIn_TableViewerPanel");
+                if (dpexists)
+                {
+                    TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
+                    vm.RefreshSchemas();
+                }
+                //}
+                //else
+                //{
+                //    //need to pass schemalist to global to hold until the dp is instatintiated  dp.Show
+                //    Globals.GSchemas = oc;
+                //}
+                //Mouse.OverrideCursor = null;
+            }
+            catch (Exception ex)
             {
-                try
+                FrameworkApplication.State.Deactivate("condition_state_hasProps");
+                FrameworkApplication.State.Deactivate("condition_state_isconnected");
+
+                IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
+                if (wrapper != null)
                 {
-                    base.OnDropDownOpened();
-
-                    Clear();
-                    foreach (ConnectionItem item in HanaConfigModule.Current.ConnectionItems)
-                    {
-                        this.Add(new ComboBoxItem(item.name, item));
-                    }
-                    if (this.ItemCollection.Count == 0)
-                    {
-                        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("There were no connections found.  Please add connections by going to Pro's backstage, then Options, then Hana Properties");
-
-                    }
+                    wrapper.Caption = "Not Connected";
                 }
-                catch (Exception ex)
+                IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
+                if (wrapper2 != null)
                 {
-                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error in OnDropDownOpened. " + ex.Message);
+                    wrapper2.Caption = "Not Connected";
                 }
-            });
-            Mouse.OverrideCursor = null;
-        }
-        public static string AddinAssemblyLocation()
-        {
-            var asm = System.Reflection.Assembly.GetExecutingAssembly();
-            return System.IO.Path.GetDirectoryName(
-                              Uri.UnescapeDataString(
-                                      new Uri(asm.CodeBase).LocalPath));
-        }
-       
+                IPlugInWrapper wrapper3 = FrameworkApplication.GetPlugInWrapper("lblHasConnTrue");
+                if (wrapper3 != null)
+                {
+                    wrapper3.Caption = "Not Connected";
+                    wrapper3.Checked = false;
+                }
+                Mouse.OverrideCursor = null;
+                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error in OnSelectionChanged. " + ex.Message);
+            }
 
-        private class toolSAPIdentify : ArcGIS.Desktop.Mapping.MapTool
-        {
-            //public toolSAPIdentify()
-            //{
-            //    IsSketchTool = true;
-            //    SketchType = SketchGeometryType.Rectangle;
-
-            //    //To perform a interactive selection or identify in 3D or 2D, sketch must be created in screen coordinates.
-            //    SketchOutputMode = SketchOutputMode.Screen;
-            //}
-            //protected override Task<bool> OnSketchCompleteAsync(Geometry geometry)
-            //{
-            //    return QueuedTask.Run(() =>
-            //    {
-            //        var mapView = MapView.Active;
-            //        if (mapView == null)
-            //            return true;
-
-            //        //Get all the features that intersect the sketch geometry and flash them in the view. 
-            //        var results = mapView.GetFeatures(geometry);
-            //        foreach (var item in results)
-            //        {
-            //            FeatureLayer pfl = (FeatureLayer)item.Key;
-            //            QueryFilter pQF = new QueryFilter();
-            //            pQF.ObjectIDs = item.Value;
-            //            RowCursor pCur = pfl.Search(pQF);
-            //            while (pCur.MoveNext())
-            //            {
-            //                Row prow = pCur.Current;
-            //                Feature pfeat = (Feature)prow;
-
-            //                //prow[0];
-            //                //prow[0] = 's';
-
-            //            }
-
-            //            //MessageBox.Show(item.Key.ToString());
-            //        }
-            //        mapView.FlashFeature(results);
-
-            //        //Show a message box reporting each layer the number of the features.
-            //        MessageBox.Show(String.Join("\n", results.Select(kvp => String.Format("{0}: {1}", kvp.Key.Name, kvp.Value.Count()))), "Identify Result");
-            //        return true;
-
-            //    });
-            //}
-            //protected override Task HandleMouseDownAsync(MapViewMouseButtonEventArgs e)
-            //{
-            //    return QueuedTask.Run(() =>
-            //    {
-            //        var mapPoint = MapView.Active.ClientToMap(e.ClientPoint);
-            //    });
-            //}
-
-        }
+        });
 
     }
-    public class CommandHandler : ICommand
+    protected override async void OnDropDownOpened()
+    {
+        await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+        {
+            try
+            {
+                base.OnDropDownOpened();
+
+                Clear();
+                foreach (ConnectionItem item in HanaConfigModule.Current.ConnectionItems)
+                {
+                    this.Add(new ComboBoxItem(item.name, item));
+                }
+                if (this.ItemCollection.Count == 0)
+                {
+                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("There were no HANA connections found.  Please add connections by going to Pro's backstage, then Options, then Hana Properties.");
+
+                }
+            }
+            catch (Exception ex)
+            {
+                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error in OnDropDownOpened. " + ex.Message);
+            }
+        });
+        Mouse.OverrideCursor = null;
+    }
+}
+#endregion
+public class CommandHandler : ICommand
     {
         private Action _action;
         private bool _canExecute;
@@ -731,6 +742,5 @@ namespace SapHanaAddIn
         }
     }
  
-
-   
 }
+

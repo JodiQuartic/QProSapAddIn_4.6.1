@@ -31,7 +31,7 @@
                 
                 <StackPanel Orientation="Horizontal" Width="auto">
                     <TextBlock   HorizontalAlignment="Left"  Height="25" Text="  Schemas " Style="{DynamicResource Esri_TextBlockH3}" ></TextBlock>
-                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboSchema" ItemsSource="{Binding Globals.Schemas}" SelectedItem="{Binding CurrentSchema}"/>
+                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboSchema" ItemsSource="{Binding Schemas}" SelectedItem="{Binding CurrentSchema}"/>
                     <TextBlock  HorizontalAlignment="Left"  Height="25" Text="  Tables "  Style="{DynamicResource Esri_TextBlockH3}"  ></TextBlock>
                     <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboTables" ItemsSource="{Binding Tables}" SelectedItem="{Binding CurrentTable}" />
                 </StackPanel>
