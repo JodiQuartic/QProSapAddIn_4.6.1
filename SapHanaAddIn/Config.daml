@@ -10,6 +10,7 @@
     <!-- Note subject can be one or more of these topics:
                     Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
   </AddInInfo>
+  
   <conditions>
     <insertCondition id="condition_hasProps" caption="HANA Connections">
       <state id="condition_state_hasProps" />
@@ -23,7 +24,7 @@
   </conditions>
   
   <modules>
-    <insertModule id="SapHanaAddIn_Config" className="HanaConfigModule" autoLoad="true" caption="Hana Config Settings">
+    <insertModule id="SapHanaAddIn_Config" className="HanaConfigModule" autoLoad="false" caption="Hana Config Settings">
       <tabs>
         <tab id="SapHanaAddIn_Tab1" caption="SAP Tools" keytip="s">
           <group refID="SapHanaAddIn_Grp1" />
@@ -58,17 +59,18 @@
             <disabledText>Pick a HANA DB from the dropdown. </disabledText>
           </tooltip>
         </comboBox>
-        <button id="btnConnect" condition="condition_hasProps" keytip="Connect To DB" caption=" " className="btnConnect" loadOnClick="true">
+        <button id="btnConnect" disableIfBusy="true"  condition="condition_hasProps" keytip="Connect To DB" caption=" " className="btnConnect" loadOnClick="true">
         </button>
-        <button id="btnSqlExplorer" condition="condition_isconnected" keytip="Explore DB using Sql" caption="SQL Explorer" className="btnSqlExplorer" loadOnClick="true" smallImage="Images\table_view.ico" largeImage="Images\table2_view.png">
+        <button id="btnSqlExplorer" disableIfBusy="true"  condition="condition_isconnected" keytip="Explore DB using Sql" caption="SQL Explorer" className="btnSqlExplorer" loadOnClick="true" smallImage="Images\table_view.ico" largeImage="Images\table2_view.png">
         </button>
-        <button id="btnSAPFind" condition="condition_notReady" keytip="Locate SAP Object" caption="Find by ID" className="btnSAPFind" loadOnClick="true" smallImage="Images\Find16.png" largeImage="Images\data_find.png" />
-        <tool id="toolSAPIdentify" condition="condition_notReady" keytip="Display SAP asset" caption="Identify SAP" className="toolSAPIdentify" loadOnClick="true" largeImage="Images\environment_view.png" />
-        <button id="btnSAPIdentify" condition="condition_notReady" keytip="Display GIS asset" caption="Identify GIS" className="btnSAPIdentify" loadOnClick="true" largeImage="Images\environment_information.png" />
-        <button id="btnSAPConflictDetection" condition="condition_notReady" keytip="Select assets from map and compare the data in SAP with data in GIS" caption="Find Conflicts" className="btnConflictDetection" loadOnClick="true" smallImage="Images\VersionChange16.png" largeImage="Images\selection_replace.png" />
+        <button id="btnSAPFind" disableIfBusy="true" condition="condition_notReady" keytip="Locate SAP Object" caption="Find by ID" className="btnSAPFind" loadOnClick="true" smallImage="Images\Find16.png" largeImage="Images\data_find.png" />
+        <tool id="toolSAPIdentify" disableIfBusy="true" condition="condition_notReady" keytip="Display SAP asset" caption="Identify SAP" className="toolSAPIdentify" loadOnClick="true" largeImage="Images\environment_view.png" />
+        <button id="btnSAPIdentify" disableIfBusy="true" condition="condition_notReady" keytip="Display GIS asset" caption="Identify GIS" className="btnSAPIdentify" loadOnClick="true" largeImage="Images\environment_information.png" />
+        <button id="btnSAPConflictDetection" disableIfBusy="true" condition="condition_notReady" keytip="Select assets from map and compare the data in SAP with data in GIS" caption="Find Conflicts" className="btnConflictDetection" loadOnClick="true" smallImage="Images\VersionChange16.png" largeImage="Images\selection_replace.png" />
       </controls>
       <dockPanes>
-        <dockPane id="SapHanaAddIn_TableViewerPanel" caption="SAP HANA Data  Explorer" className="TableViewerPanelViewModel" dockWith="esri_core_contentsDockPane" condition="condition_isconnected" dock="float" width="500" >
+        <dockPane id="SapHanaAddIn_TableViewerPanel" caption="SAP HANA Data  Explorer" 
+                  className="TableViewerPanelViewModel" dockWith="esri_core_contentsDockPane" condition="condition_isconnected" dock="float" width="500" >
           <content className="TableViewerPanelView"  />
         </dockPane>
       </dockPanes>

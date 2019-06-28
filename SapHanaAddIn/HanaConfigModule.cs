@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Windows.Input;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using System.Threading.Tasks;
@@ -11,9 +9,7 @@ using System.Security.Cryptography;
 using System.IO;
 using System.Security;
 using ArcGIS.Desktop.Core;
-using Microsoft.Win32;
-using System.Runtime.InteropServices;
-using System.Data.Odbc;
+using ArcGIS.Core.Events;
 
 namespace SapHanaAddIn
 {
@@ -46,8 +42,55 @@ namespace SapHanaAddIn
             //ListODBCsources();
         }
 
-       
+        public static HanaConfigModule Current
+        {
+            get
+            {
+                return _this ?? (_this = (HanaConfigModule)FrameworkApplication.FindModule("SapHanaAddIn_Config"));
+            }
+        }
 
+        private Dictionary<string, string> _moduleSettings = new Dictionary<string, string>();
+        internal Dictionary<string, string> Settings
+        {
+            get { return _moduleSettings; }
+            set { _moduleSettings = value; }
+        }
+
+        #region Event Declarations
+        internal sealed class ValueChangedEventArgs : EventArgs
+        {
+            internal int? _idx;
+            internal ValueChangedEventArgs(int? idx)
+            {
+                _idx = idx;
+            }
+        }
+        internal class CboEnvChangedEvent : CompositePresentationEvent<ValueChangedEventArgs>
+        {
+            public static SubscriptionToken Subscribe(Action<ValueChangedEventArgs> action, bool keepSubscriberAlive = false)
+            {
+                return FrameworkApplication.EventAggregator.GetEvent<CboEnvChangedEvent>().Register(action, keepSubscriberAlive);
+            }
+
+            public static void Unsubscribe(Action<ValueChangedEventArgs> action)
+            {
+                FrameworkApplication.EventAggregator.GetEvent<CboEnvChangedEvent>().Unregister(action);
+            }
+
+            public static void Unsubscribe(SubscriptionToken token)
+            {
+                FrameworkApplication.EventAggregator.GetEvent<CboEnvChangedEvent>().Unregister(token);
+            }
+
+            internal static void Publish(ValueChangedEventArgs eventArgs)
+            {
+                FrameworkApplication.EventAggregator.GetEvent<CboEnvChangedEvent>().Broadcast(eventArgs);
+            }
+        }
+        #endregion
+
+        #region Read dns settings
         //private List<string> EnumDsn()
         //{
         //    List<string> list = new List<string>();
@@ -55,49 +98,49 @@ namespace SapHanaAddIn
         //    list.AddRange(EnumDsn(Registry.LocalMachine));
         //    return list;
         //}
-        
-    //public static class OdbcWrapper
-    //{
-    //    [DllImport("odbc32.dll")]
-    //    public static extern int SQLDataSources(int EnvHandle, int Direction, StringBuilder ServerName, int ServerNameBufferLenIn,
-    //ref int ServerNameBufferLenOut, StringBuilder Driver, int DriverBufferLenIn, ref int DriverBufferLenOut);
 
-    //    [DllImport("odbc32.dll")]
-    //    public static extern int SQLAllocEnv(ref int EnvHandle);
-    //}
+        //public static class OdbcWrapper
+        //{
+        //    [DllImport("odbc32.dll")]
+        //    public static extern int SQLDataSources(int EnvHandle, int Direction, StringBuilder ServerName, int ServerNameBufferLenIn,
+        //ref int ServerNameBufferLenOut, StringBuilder Driver, int DriverBufferLenIn, ref int DriverBufferLenOut);
 
-    //public void ListODBCsources()
-    //    {
-    //        int envHandle = 0;
-    //        const int SQL_FETCH_NEXT = 1;
-    //        const int SQL_FETCH_FIRST_SYSTEM = 32;
+        //    [DllImport("odbc32.dll")]
+        //    public static extern int SQLAllocEnv(ref int EnvHandle);
+        //}
 
-    //        if (OdbcWrapper.SQLAllocEnv(ref envHandle) != -1)
-    //        {
-    //            int ret;
-    //            StringBuilder serverName = new StringBuilder(1024);
-    //            StringBuilder driverName = new StringBuilder(1024);
-    //            StringBuilder serverNode = new StringBuilder(1024);
-    //            int snLen = 0;
-    //            int driverLen = 0;
-    //            int servernodeLen = 0;
-                ////ret = OdbcWrapper.SQLDataSources(envHandle, SQL_FETCH_FIRST_SYSTEM,
-                //            serverName, serverName.Capacity, ref snLen,
-                //            driverName, driverName.Capacity, ref driverLen,
-                //            serverNode, serverNode.Capacity, ref servernodeLen);
-                //while (ret == 0)
-                //{
-                //    if (driverName.ToString() == "HDBODBC")
-                //    {
-                //        System.Windows.Forms.MessageBox.Show(serverName + System.Environment.NewLine + driverName);
-                //        ret = OdbcWrapper.SQLDataSources(envHandle, SQL_FETCH_NEXT, serverName, serverName.Capacity, ref snLen,
-                //                driverName, driverName.Capacity, ref driverLen);
-                //    }
-                //}
+        //public void ListODBCsources()
+        //    {
+        //        int envHandle = 0;
+        //        const int SQL_FETCH_NEXT = 1;
+        //        const int SQL_FETCH_FIRST_SYSTEM = 32;
+
+        //        if (OdbcWrapper.SQLAllocEnv(ref envHandle) != -1)
+        //        {
+        //            int ret;
+        //            StringBuilder serverName = new StringBuilder(1024);
+        //            StringBuilder driverName = new StringBuilder(1024);
+        //            StringBuilder serverNode = new StringBuilder(1024);
+        //            int snLen = 0;
+        //            int driverLen = 0;
+        //            int servernodeLen = 0;
+        ////ret = OdbcWrapper.SQLDataSources(envHandle, SQL_FETCH_FIRST_SYSTEM,
+        //            serverName, serverName.Capacity, ref snLen,
+        //            driverName, driverName.Capacity, ref driverLen,
+        //            serverNode, serverNode.Capacity, ref servernodeLen);
+        //while (ret == 0)
+        //{
+        //    if (driverName.ToString() == "HDBODBC")
+        //    {
+        //        System.Windows.Forms.MessageBox.Show(serverName + System.Environment.NewLine + driverName);
+        //        ret = OdbcWrapper.SQLDataSources(envHandle, SQL_FETCH_NEXT, serverName, serverName.Capacity, ref snLen,
+        //                driverName, driverName.Capacity, ref driverLen);
+        //    }
+        //}
         //    }
 
         //}
-       
+
         //private IEnumerable<string> EnumDsn(RegistryKey rootKey)
         //{
         //    RegistryKey regKey = rootKey.OpenSubKey(@"Software\ODBC\ODBC.INI\ODBC Data Sources");
@@ -116,25 +159,8 @@ namespace SapHanaAddIn
         //    }
 
         //}
-        /// <summary>
-        /// Retrieve the singleton instance to this module here
-        /// </summary>
-        public static HanaConfigModule Current
-        {
-            get
-            {
-                return _this ?? (_this = (HanaConfigModule)FrameworkApplication.FindModule("SapHanaAddIn_Config"));
-            }
-        }
-
-        private Dictionary<string, string> _moduleSettings = new Dictionary<string, string>();
-
-        internal Dictionary<string, string> Settings
-        {
-            get { return _moduleSettings; }
-            set { _moduleSettings = value; }
-        }
-
+        #endregion
+        #region Connection properties
         private SecureString _Hpass = new SecureString();
         internal SecureString Hpass
         {
@@ -162,6 +188,7 @@ namespace SapHanaAddIn
             get { return _hanatables; }
             set { _hanatables = value; }
         }
+        #endregion
 
         #region Overrides
         /// <summary>
@@ -264,7 +291,6 @@ namespace SapHanaAddIn
 
             return Task.FromResult(0);
         }
-
        
         protected override Task   OnWriteSettingsAsync(ModuleSettingsWriter settings)
         {
@@ -376,8 +402,6 @@ namespace SapHanaAddIn
             return Task.FromResult(0);
 
         }
-
-
 
         #endregion OverridesDictionary<string, string> _environmrnts
         public static string AddinAssemblyLocation()

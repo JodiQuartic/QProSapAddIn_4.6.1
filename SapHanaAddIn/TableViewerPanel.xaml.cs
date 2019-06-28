@@ -33,11 +33,10 @@ namespace SapHanaAddIn
 
         private void btnExecute_Click(object sender, RoutedEventArgs e)
         {
-            try
+            ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
             {
-                //ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
-                //{
-
+                try
+            {
                 Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
                 
                 //check for valid connection
@@ -48,7 +47,8 @@ namespace SapHanaAddIn
                 }
 
                 //check for sql string
-                string txtSQLStatement = txtQueryText.Text;
+                
+                    string txtSQLStatement = txtQueryText.Text;
                 if (txtSQLStatement.Trim().Length < 1)
                 {
                     ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Please enter the command text.", "Empty command text");
@@ -59,10 +59,10 @@ namespace SapHanaAddIn
                 { _spatialcolumn = (txtSpatialCol.Text.Remove(0, 15)); }
                 if (txtObjidCol.Text != null)
                 { _objidcolumn = (txtObjidCol.Text.Remove(0, 16)); }
-                if (txtTotRecCount.Text != null)
-                { _totreccount = (txtTotRecCount.Text); }
-                //if (txtActRecCount.Text != null)
-                //{ _actreccount = (txtActRecCount.Text); }
+                //if (txtTotRecCount.Text != null)
+                //{ _totreccount = (txtTotRecCount.Text); }
+                if (txtActRecCount.Text != null)
+                { _actreccount = (txtActRecCount.Text); }
                 if (cboTables.Items != null)
                 { _tbls = cboTables.Items.ToString(); }
                 if (txtQueryText.Text != null)
@@ -97,11 +97,8 @@ namespace SapHanaAddIn
                     dt.Load(dr);
                     dgForResults.ItemsSource = dt.DefaultView;
                     
-                    //count of actual rows
-                    _actreccount= dt.Rows.Count.ToString();
-                    //TableViewerPanelViewModel vm1 = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
-                    //((vm1)(this.DataContext)).ActRecCount = _actreccount;
-
+                    //count of actual rows returned
+                    _actreccount = dt.Rows.Count.ToString();
                     dr.Close();
 
                     if (dgForResults.HasItems)
@@ -114,7 +111,10 @@ namespace SapHanaAddIn
                             if (col.ToString().Length > 0)
                             { col.Width = col.ToString().Length + 15; }
                         }
-                         
+
+                        //
+                        //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("dgforgrid.actual: " +dgForGrid.ActualHeight + " dgforres.actual: " + dgForResults.ActualHeight + "dgresults " + dgResults.Height);
+
                     }
                     else
                     {
@@ -125,64 +125,70 @@ namespace SapHanaAddIn
                 else
                 {
                     ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This data reader is empty", "Table is empty");
-                    return;
+                        Mouse.OverrideCursor = null;
+                        return;
                 }
-
-               // });
+                    Mouse.OverrideCursor = null;
+                
             }
             catch (Exception ex)
             {
                 ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message, "Failed to execute SQL statement");
                 Mouse.OverrideCursor = null;
             }
+        });  //end await
 
-            Mouse.OverrideCursor = null;
+            
         }
 
         private void btnAddTOC_Click(object sender, RoutedEventArgs e)
         {
-            try
+            ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
             {
-                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-
-                if (MapView.Active != null)
+                try
                 {
-                    //position - don't know why this doesn't work in xaml
-                    //dgForResults.Height = this.ActualHeight * .7;
-                    //dgForResults.Width = 500;
-                    //dpForGrid.Width = 500;
-                    //dpMain.Width = 500;
+                    Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
 
-                    if (txtSpatialCol != null)
-                    { _spatialcolumn = (txtSpatialCol.Text.Remove(0, 15)); }
-                    if (txtObjidCol.Text != null)
-                    { _objidcolumn = (txtObjidCol.Text.Remove(0, 16)); }
-                    //if (txtActRecCount.Text != null)
-                    //{ _actreccount = (txtActRecCount.Text); }
-                    if (txtTotRecCount.Text != null)
-                    { _totreccount = (txtTotRecCount.Text); }
-                    if (cboTables.Items != null)
-                    { _tbls = cboTables.Items.ToString(); }
-                    if (txtQueryText.Text != null)
-                    { _querystring = txtQueryText.Text; }
-                    if (cboTables.SelectedValue.ToString() != null)
-                    { _currenttable = cboTables.SelectedValue.ToString(); }
+                    if (MapView.Active != null)
+                    {
+                        //position - don't know why this doesn't work in xaml
+                        //dgForResults.Height = this.ActualHeight * .7;
+                        //dgForResults.Width = 500;
+                        //dpForGrid.Width = 500;
+                        //dpMain.Width = 500;
 
-                    Task sssss = OpenEnterpriseGeodatabase();
-                    return;
+                        if (txtSpatialCol != null)
+                        { _spatialcolumn = (txtSpatialCol.Text.Remove(0, 15)); }
+                        if (txtObjidCol.Text != null)
+                        { _objidcolumn = (txtObjidCol.Text.Remove(0, 16)); }
+                        if (txtActRecCount.Text != null)
+                        { _actreccount = (txtActRecCount.Text); }
+                        //if (txtTotRecCount.Text != null)
+                        //{ _totreccount = (txtTotRecCount.Text); }
+                        if (cboTables.Items != null)
+                        { _tbls = cboTables.Items.ToString(); }
+                        if (txtQueryText.Text != null)
+                        { _querystring = txtQueryText.Text; }
+                        if (cboTables.SelectedValue.ToString() != null)
+                        { _currenttable = cboTables.SelectedValue.ToString(); }
+
+                        Task sssss = OpenEnterpriseGeodatabase();
+                        return;
+                    }
+                    else
+                    {
+                        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Please activate a map");
+                    }
+
                 }
-                else
+                catch (Exception ex)
                 {
-                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Please activate a map");
+                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message);
+                    Mouse.OverrideCursor = null;
                 }
-
-            }
-            catch (Exception ex)
-            {
-                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message);
                 Mouse.OverrideCursor = null;
-            }
-            Mouse.OverrideCursor = null;
+            
+            });  //end await
         }
 
         public async Task OpenEnterpriseGeodatabase()
@@ -264,7 +270,7 @@ namespace SapHanaAddIn
                         }
                         else
                         {
-                            ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This table does not have a valid key field in the database for ArcGIS.  An Attempt will be made to create a temporary one.");
+                            ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This table does not have a valid key field in the database.  Pro requires at least one field that can be used as an Objectid field. The field must be not null, contain unique values, and be one of the following data types: Integer, string, GUID or Date.  An attempt will be made to create a field for you.");
                             //construct objectid as it is a required column in Pro
                             //row_number() over(partition by " + tempid + ") as OBJECTID";))
                             //string fakeObjCol = objidCol.Split('-')[1];

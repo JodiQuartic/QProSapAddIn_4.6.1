@@ -172,7 +172,9 @@
   <ItemGroup>
     <AddInContent Include="DarkImages\GenericButtonPurple32.png" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <AddInContent Include="EULA.rtf" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--
   PackageAction can be:
