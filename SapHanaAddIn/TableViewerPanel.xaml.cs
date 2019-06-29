@@ -29,118 +29,19 @@ namespace SapHanaAddIn
         public TableViewerPanelView()
         {
             InitializeComponent();
+
+            //  We have declared the view model instance declaratively in the xaml.
+            //  Get the reference to it here, so we can use it in the button click event.
+            TableViewerPanelViewModel _tableviewerpanelViewModel = (TableViewerPanelViewModel)base.DataContext;
         }
 
         private void btnExecute_Click(object sender, RoutedEventArgs e)
         {
             ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
             {
-                try
-            {
-                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-                
-                //check for valid connection
-                if (Globals.hanaConn == null || Globals.hanaConn.State != ConnectionState.Open)
-                {
-                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Connect to a database first.", "Not connected");
-                    return;
-                }
-
-                //check for sql string
-                
-                    string txtSQLStatement = txtQueryText.Text;
-                if (txtSQLStatement.Trim().Length < 1)
-                {
-                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Please enter the command text.", "Empty command text");
-                    return;
-                }
-
-                if (txtSpatialCol != null)
-                { _spatialcolumn = (txtSpatialCol.Text.Remove(0, 15)); }
-                if (txtObjidCol.Text != null)
-                { _objidcolumn = (txtObjidCol.Text.Remove(0, 16)); }
-                //if (txtTotRecCount.Text != null)
-                //{ _totreccount = (txtTotRecCount.Text); }
-                if (txtActRecCount.Text != null)
-                { _actreccount = (txtActRecCount.Text); }
-                if (cboTables.Items != null)
-                { _tbls = cboTables.Items.ToString(); }
-                if (txtQueryText.Text != null)
-                { _querystring = txtQueryText.Text; }
-                if (cboTables.SelectedValue.ToString() != null)
-                { _currenttable = cboTables.SelectedValue.ToString(); }
-
-                string qtest = "";
-                if (_spatialcolumn != "none" && _spatialcolumn != "")
-                {
-                    //if (txtSQLStatement.IndexOf(sc) > 0)
-                    //{
-                    qtest = txtSQLStatement.Replace(_spatialcolumn, _spatialcolumn + ".st_aswkt()" + " as " + _spatialcolumn);
-                }
-                else
-                {
-                    qtest = txtSQLStatement;
-                }
-
-                HanaCommand cmd = new HanaCommand(qtest, Globals.hanaConn);
-                HanaDataReader dr = null;
-                System.Windows.Forms.DataGrid dgResults = new System.Windows.Forms.DataGrid();
-
-                dr = cmd.ExecuteReader();
-                dgResults.DataSource = null;
-                dgResults.Refresh();
-
-                if (dr != null)
-                {
-                    dgResults.DataSource = dr;
-                    DataTable dt = new DataTable();
-                    dt.Load(dr);
-                    dgForResults.ItemsSource = dt.DefaultView;
-                    
-                    //count of actual rows returned
-                    _actreccount = dt.Rows.Count.ToString();
-                    dr.Close();
-
-                    if (dgForResults.HasItems)
-                    {
-                        //dg column properties
-                        foreach (DataGridColumn col in dgForResults.Columns)
-                        {
-                            if (col.Header.ToString() == "")
-                            { col.Header = col.ToString(); }
-                            if (col.ToString().Length > 0)
-                            { col.Width = col.ToString().Length + 15; }
-                        }
-
-                        //
-                        //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("dgforgrid.actual: " +dgForGrid.ActualHeight + " dgforres.actual: " + dgForResults.ActualHeight + "dgresults " + dgResults.Height);
-
-                    }
-                    else
-                    {
-                        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This table has no rows.", "Table is empty");
-                        return;
-                    }
-                }
-                else
-                {
-                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This data reader is empty", "Table is empty");
-                        Mouse.OverrideCursor = null;
-                        return;
-                }
-                    Mouse.OverrideCursor = null;
-                
-            }
-            catch (Exception ex)
-            {
-                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show(ex.Message, "Failed to execute SQL statement");
-                Mouse.OverrideCursor = null;
-            }
-        });  //end await
-
-            
+                Task r = ExecuteSql();
+            });
         }
-
         private void btnAddTOC_Click(object sender, RoutedEventArgs e)
         {
             ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
@@ -191,6 +92,21 @@ namespace SapHanaAddIn
             });  //end await
         }
 
+        private void cboSchemas_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            {
+                Task r = RefreshTablesCb();
+            });
+        }
+        private void cboTables_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            {
+                Task r = TableSelectedCb();
+            });
+        }
+
         public async Task OpenEnterpriseGeodatabase()
         {
             await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
@@ -220,7 +136,7 @@ namespace SapHanaAddIn
                     {
                         AuthenticationMode = AuthenticationMode.DBMS,
 
-                      
+
                         Instance = cboEnv.cboBox.Text, //@"sapqe2hana",
 
                         // Provided that a login called gdb has been created and corresponding schema has been created with the required permissions.
@@ -288,7 +204,7 @@ namespace SapHanaAddIn
 
                             qds.SetObjectIDFields(oc);
                         }
-                        
+
                         if (qds.IsSpatialQuery())
                         {
                             try
@@ -342,6 +258,137 @@ namespace SapHanaAddIn
                 Mouse.OverrideCursor = null;
             });
         }
+
+        public async Task RefreshTablesCb()
+        {
+            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            {
+                bool dpexists = FrameworkApplication.DockPaneManager.IsDockPaneCreated("SapHanaAddIn_TableViewerPanel");
+                if (dpexists)
+                {
+                    TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
+                    Task r = vm.RefreshTablesCallback();
+                }
+                    
+
+            });
+        }
+
+        public async Task ExecuteSql()
+        {
+            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            {
+
+                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+
+                //check for valid connection
+                if (Globals.hanaConn == null || Globals.hanaConn.State != ConnectionState.Open)
+                {
+                    //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Connect to a database first.", "Not connected");
+                    return;
+                }
+
+                //check for sql string
+
+                string txtSQLStatement = txtQueryText.Text;
+                if (txtSQLStatement.Trim().Length < 1)
+                {
+                    //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Please enter the command text.", "Empty command text");
+                    return;
+                }
+
+                if (txtSpatialCol != null)
+                { _spatialcolumn = (txtSpatialCol.Text.Remove(0, 15)); }
+                if (txtObjidCol.Text != null)
+                { _objidcolumn = (txtObjidCol.Text.Remove(0, 16)); }
+                //if (txtTotRecCount.Text != null)
+                //{ _totreccount = (txtTotRecCount.Text); }
+                if (txtActRecCount.Text != null)
+                { _actreccount = (txtActRecCount.Text); }
+                if (cboTables.Items != null)
+                { _tbls = cboTables.Items.ToString(); }
+                if (txtQueryText.Text != null)
+                { _querystring = txtQueryText.Text; }
+                if (cboTables.SelectedValue.ToString() != null)
+                { _currenttable = cboTables.SelectedValue.ToString(); }
+
+                string qtest = "";
+                if (_spatialcolumn != "none" && _spatialcolumn != "")
+                {
+                    //if (txtSQLStatement.IndexOf(sc) > 0)
+                    //{
+                    qtest = txtSQLStatement.Replace(_spatialcolumn, _spatialcolumn + ".st_aswkt()" + " as " + _spatialcolumn);
+                }
+                else
+                {
+                    qtest = txtSQLStatement;
+                }
+
+                HanaCommand cmd = new HanaCommand(qtest, Globals.hanaConn);
+                HanaDataReader dr = null;
+                System.Windows.Forms.DataGrid dgResults = new System.Windows.Forms.DataGrid();
+
+                dr = cmd.ExecuteReader();
+                dgResults.DataSource = null;
+                dgResults.Refresh();
+
+                if (dr != null)
+                {
+                    dgResults.DataSource = dr;
+                    DataTable dt = new DataTable();
+                    dt.Load(dr);
+                    dgForResults.ItemsSource = dt.DefaultView;
+
+                    //count of actual rows returned
+                    _actreccount = dt.Rows.Count.ToString();
+                    dr.Close();
+
+                    if (dgForResults.HasItems)
+                    {
+                        //dg column properties
+                        foreach (DataGridColumn col in dgForResults.Columns)
+                        {
+                            if (col.Header.ToString() == "")
+                            { col.Header = col.ToString(); }
+                            if (col.ToString().Length > 0)
+                            { col.Width = col.ToString().Length + 15; }
+                        }
+
+                        //
+                        //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("dgforgrid.actual: " +dgForGrid.ActualHeight + " dgforres.actual: " + dgForResults.ActualHeight + "dgresults " + dgResults.Height);
+
+                    }
+                    else
+                    {
+                        //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This table has no rows.", "Table is empty");
+                        return;
+                    }
+                }
+                else
+                {
+                    //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This data reader is empty", "Table is empty");
+                    Mouse.OverrideCursor = null;
+                    return;
+                }
+                Mouse.OverrideCursor = null;
+            });
+
+        }
+
+        public async Task TableSelectedCb()
+        {
+            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            {
+                bool dpexists = FrameworkApplication.DockPaneManager.IsDockPaneCreated("SapHanaAddIn_TableViewerPanel");
+                if (dpexists)
+                {
+                    TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
+                    Task r = vm.TableSelectedCallback();
+                }
+
+            });
+        }
+       
 
         //this is for datagrid right click context menu
         //private void MenuItem_MouseUp(object sender, MouseButtonEventArgs e)

@@ -27,12 +27,14 @@
             </TextBlock>
 
             <DockPanel KeyboardNavigation.TabNavigation="Local" Width="auto" Margin="1,1,1,1">
-                
+
                 <StackPanel Orientation="Horizontal" Width="auto">
                     <TextBlock   HorizontalAlignment="Left"  Height="25" Text="  Schemas " Style="{DynamicResource Esri_TextBlockH3}" ></TextBlock>
-                    <ComboBox   HorizontalAlignment="Left"  Height="25" Width="150" Name="cboSchema" ItemsSource="{Binding Schemas}" SelectedItem="{Binding CurrentSchema}"/>
+                    <ComboBox   HorizontalAlignment="Left"  Height="25" Width="150" Name="cboSchemas" Visibility="{Binding Schema._canExectute}" SelectionChanged="cboSchemas_SelectionChanged"
+                         ItemsSource="{Binding SchemaColl}" SelectedItem="{Binding CurrentSchema}"/>
                     <TextBlock  HorizontalAlignment="Left"  Height="25" Text="  Tables "  Style="{DynamicResource Esri_TextBlockH3}"  ></TextBlock>
-                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboTables" ItemsSource="{Binding Tables}" SelectedItem="{Binding CurrentTable}" />
+                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboTables" Visibility="{Binding Schema._canExectute}" SelectionChanged="cboTables_SelectionChanged" 
+                        ItemsSource="{Binding Tables}"  SelectedItem="{Binding CurrentTable}" />
                 </StackPanel>
 
             </DockPanel>
@@ -44,15 +46,14 @@
                      Foreground="{DynamicResource Esri_TextStyleDefaultBrush}" 
                      Text="{Binding QueryTxt.SelectString, Mode=OneWay}"                               
                          VerticalScrollBarVisibility="Visible" >
-                    
+
                 </TextBox>
-                
+
             </DockPanel>
 
             <Button x:Name="btnExecute" HorizontalAlignment="Right" Style="{DynamicResource Esri_Button}" Visibility="{Binding QueryText._canExectute}"
-                        Click="btnExecute_Click" Content="Execute SQL">
-            </Button>
-
+                        Content="Execute SQL" Click="btnExecute_Click"></Button>
+            
             <TextBlock Text="{Binding Heading2}" Margin="3,3,5,3" Style="{DynamicResource Esri_TextBlockDockPaneHeader}">
             </TextBlock>
             

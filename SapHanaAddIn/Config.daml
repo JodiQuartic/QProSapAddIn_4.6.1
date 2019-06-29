@@ -54,7 +54,7 @@
       </subgroups>
       <controls>
         <!-- add your controls here -->
-        <comboBox id="cboEnv" disableIfBusy="true" isEditable="false" className="cboEnv" isReadOnly="true" keytip="SV" itemWidth="120" caption="Environment: ">
+        <comboBox id="cboEnv" disableIfBusy="true" isEditable="false" className="cboEnv"  isReadOnly="true" keytip="SV" itemWidth="120" caption="Environment: ">
           <tooltip heading="Connect To the selected HANA DB">
             <disabledText>Pick a HANA DB from the dropdown. </disabledText>
           </tooltip>

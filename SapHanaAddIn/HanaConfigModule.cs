@@ -21,6 +21,7 @@ namespace SapHanaAddIn
         {
             ProjectOpenedEvent.Subscribe(OnProjectOpen);
             ProjectClosedEvent.Subscribe(OnProjectClose);
+
         }
         private void OnProjectClose(ProjectEventArgs obj)
         {
@@ -56,39 +57,6 @@ namespace SapHanaAddIn
             get { return _moduleSettings; }
             set { _moduleSettings = value; }
         }
-
-        #region Event Declarations
-        internal sealed class ValueChangedEventArgs : EventArgs
-        {
-            internal int? _idx;
-            internal ValueChangedEventArgs(int? idx)
-            {
-                _idx = idx;
-            }
-        }
-        internal class CboEnvChangedEvent : CompositePresentationEvent<ValueChangedEventArgs>
-        {
-            public static SubscriptionToken Subscribe(Action<ValueChangedEventArgs> action, bool keepSubscriberAlive = false)
-            {
-                return FrameworkApplication.EventAggregator.GetEvent<CboEnvChangedEvent>().Register(action, keepSubscriberAlive);
-            }
-
-            public static void Unsubscribe(Action<ValueChangedEventArgs> action)
-            {
-                FrameworkApplication.EventAggregator.GetEvent<CboEnvChangedEvent>().Unregister(action);
-            }
-
-            public static void Unsubscribe(SubscriptionToken token)
-            {
-                FrameworkApplication.EventAggregator.GetEvent<CboEnvChangedEvent>().Unregister(token);
-            }
-
-            internal static void Publish(ValueChangedEventArgs eventArgs)
-            {
-                FrameworkApplication.EventAggregator.GetEvent<CboEnvChangedEvent>().Broadcast(eventArgs);
-            }
-        }
-        #endregion
 
         #region Read dns settings
         //private List<string> EnumDsn()
@@ -200,6 +168,16 @@ namespace SapHanaAddIn
             //TODO - add your business logic
             //return false to ~cancel~ Application close
             return true;
+        }
+        //     Panes have two portions: a view-model class that must derive from thePane abstract
+        //     class and a view class that must be a FrameworkElement (typically a custom UserControl).
+        //     The two components are either associated with each other through DAML or manually
+        //     via OnCreateContent. If necessary, the Content property provides the view-model
+        //     with access to the view.
+        protected override void OnPaneOpened(Pane pane)
+        {
+            if (pane.ContentID == "SapHanaAddIn_TableViewerPanel")
+            { }
         }
 
         private bool hasSettings = false;
