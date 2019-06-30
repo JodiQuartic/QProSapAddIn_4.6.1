@@ -12,9 +12,6 @@
   </AddInInfo>
   
   <conditions>
-    <insertCondition id="condition_hasProps" caption="HANA Connections">
-      <state id="condition_state_hasProps" />
-    </insertCondition>
     <insertCondition id="condition_isconnected" caption="Are we connected">
       <state id="condition_state_isconnected" />
     </insertCondition>

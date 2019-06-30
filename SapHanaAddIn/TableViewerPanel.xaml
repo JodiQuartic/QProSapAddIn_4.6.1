@@ -30,10 +30,10 @@
 
                 <StackPanel Orientation="Horizontal" Width="auto">
                     <TextBlock   HorizontalAlignment="Left"  Height="25" Text="  Schemas " Style="{DynamicResource Esri_TextBlockH3}" ></TextBlock>
-                    <ComboBox   HorizontalAlignment="Left"  Height="25" Width="150" Name="cboSchemas" Visibility="{Binding Schema._canExectute}" SelectionChanged="cboSchemas_SelectionChanged"
-                         ItemsSource="{Binding SchemaColl}" SelectedItem="{Binding CurrentSchema}"/>
+                    <ComboBox   HorizontalAlignment="Left"  Height="25" Width="150" Name="cboSchemas"  DropDownOpened="cboSchemas_DropDownOpened"
+                         ItemsSource="{Binding SchemaColl}" SelectedItem="{Binding CurrentSchema}" SelectionChanged="cboSchemas_SelectionChanged" />
                     <TextBlock  HorizontalAlignment="Left"  Height="25" Text="  Tables "  Style="{DynamicResource Esri_TextBlockH3}"  ></TextBlock>
-                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboTables" Visibility="{Binding Schema._canExectute}" SelectionChanged="cboTables_SelectionChanged" 
+                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboTables" SelectionChanged="cboTables_SelectionChanged" 
                         ItemsSource="{Binding Tables}"  SelectedItem="{Binding CurrentTable}" />
                 </StackPanel>
 
@@ -51,7 +51,7 @@
 
             </DockPanel>
 
-            <Button x:Name="btnExecute" HorizontalAlignment="Right" Style="{DynamicResource Esri_Button}" Visibility="{Binding QueryText._canExectute}"
+            <Button x:Name="btnExecute" HorizontalAlignment="Right" Style="{DynamicResource Esri_Button}"
                         Content="Execute SQL" Click="btnExecute_Click"></Button>
             
             <TextBlock Text="{Binding Heading2}" Margin="3,3,5,3" Style="{DynamicResource Esri_TextBlockDockPaneHeader}">
@@ -68,7 +68,7 @@
                               VerticalScrollBarVisibility="Visible"
                               ColumnWidth="SizeToCells" 
                               Grid.Row="0"
-                              ItemsSource="{Binding Results, UpdateSourceTrigger=PropertyChanged}"
+                              ItemsSource="{Binding Results}"
                                >
                     <!--DataGrid.ContextMenu>
                                 <ContextMenu>
@@ -84,15 +84,15 @@
 
             <DockPanel>
                 <StatusBar Background="LightGray" HorizontalAlignment="Stretch" Width="auto">
-                    <!--StatusBarItem HorizontalAlignment="Center" >
+                    <StatusBarItem HorizontalAlignment="Center" >
                         <TextBlock Name="txtTotRecCount"  Text="{Binding TotRecCount.SelectString, StringFormat='Total: {0}'}"          
-                                ToolTip="Total number of rows in the database"
+                                ToolTip="Total number of rows in the database table"
                                    Foreground="Black"            
                                     VerticalAlignment="Center"/>
-                    </-->
+                    </StatusBarItem>
                     <StatusBarItem HorizontalAlignment="Center" >
-                        <TextBlock Name="txtActRecCount"  Text="{Binding ActRecCount.SelectString, StringFormat='Actual: {0}'}"          
-                                ToolTip="Actual number of rows in the database"
+                        <TextBlock Name="txtActRecCount"  Text="{Binding ActRecCount.SelectString, StringFormat='Returned: {0}'}"          
+                                ToolTip="Number of rows returned from the database using the sql statement"
                                    Foreground="Black"          
                                     VerticalAlignment="Center"/>
                     </StatusBarItem>

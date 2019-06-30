@@ -34,7 +34,6 @@ namespace SapHanaAddIn
             {
                 _moduleSettings.Clear();
             }
-            FrameworkApplication.State.Deactivate("condition_state_hasProps");
             FrameworkApplication.State.Deactivate("condition_state_isconnected");
             FrameworkApplication.State.Deactivate("condition_state_hasResult");
 
