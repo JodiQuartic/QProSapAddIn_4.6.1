@@ -316,7 +316,7 @@ namespace SapHanaAddIn
                 bool hasObj = false;
                 string fakeObjSql = "";
                 bool hasShape = false;
-                bool hasSlashes = false;
+                //bool hasSlashes = false;
 
                 //==============determine field to use for objectid - pro requires a pk - can't assume the field name OBJECTID in HANA is a valid field type to use for objectid according to Esri...
                 if (objfieldcount == 0)
