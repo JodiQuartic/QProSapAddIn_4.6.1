@@ -1,7 +1,7 @@
 ﻿<ArcGIS defaultAssembly="SapHanaAddIn.dll" defaultNamespace="SapHanaAddIn" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
   <AddInInfo id="{9981ecfc-db03-4ff9-9f1f-19c092cfecc7}" version="1.0" desktopVersion="2.3.15769">
     <Name>SapHanaAddIn</Name>
-    <Description>An Esri ArcGIS® Pro Add-In for connecting to, exploring and publishing SAP HANA data</Description>
+    <Description>An Esri ArcGIS® Pro Add-In for connecting to, exploring and publishing SAP data</Description>
     <Image>Images\AddinDesktop32.png</Image>
     <Author>Quartic Solutions</Author>
     <Company>Quartic Solutions</Company>
@@ -66,7 +66,7 @@
         <button id="btnSAPConflictDetection" disableIfBusy="true" condition="condition_notReady" keytip="Select assets from map and compare the data in SAP with data in GIS" caption="Find Conflicts" className="btnConflictDetection" loadOnClick="true" smallImage="Images\VersionChange16.png" largeImage="Images\selection_replace.png" />
       </controls>
       <dockPanes>
-        <dockPane id="SapHanaAddIn_TableViewerPanel" caption="SAP HANA Data  Explorer" 
+        <dockPane id="SapHanaAddIn_TableViewerPanel" caption="SAP Data  Explorer" 
                   className="TableViewerPanelViewModel" dockWith="esri_core_contentsDockPane" condition="condition_isconnected" dock="float" width="500" >
           <content className="TableViewerPanelView"  />
         </dockPane>

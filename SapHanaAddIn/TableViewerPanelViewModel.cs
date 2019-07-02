@@ -14,6 +14,7 @@ using ArcGIS.Desktop.Mapping;
 using Sap.Data.Hana;
 
 using ArcGIS.Core.Geometry;
+using System.Threading;
 
 namespace SapHanaAddIn
 {
@@ -55,6 +56,14 @@ namespace SapHanaAddIn
         }
 
         #region Tasks
+        public async Task Progressor()
+        {
+            ArcGIS.Desktop.Framework.Threading.Tasks.ProgressorSource ps = new ArcGIS.Desktop.Framework.Threading.Tasks.ProgressorSource("Doing my thing...", false);
+
+            int numSecondsDelay = 5;
+            //If you run this in the DEBUGGER you will NOT see the dialog
+            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() => Task.Delay(numSecondsDelay * 1000).Wait(), ps.Progressor);
+        }
         public async Task RefreshSchemasCallback()
         {
             await QueuedTask.Run(() =>
@@ -224,8 +233,14 @@ namespace SapHanaAddIn
         {
             await QueuedTask.Run(() =>
             {
+                if (MapView.Active == null)
+                {
+                    _strMessage.SelectString = "There is no active map view.  Please select a map and try again.";
+                    return;
+                }
 
-                //This is for reading the odbc data sources from the machine registery and is not currently being used.
+
+                //===This is for reading the odbc data sources from the machine registery and is not currently being used.
                 //// Opening a Non-Versioned db instance.
                 //RegistryKey reg = (Registry.LocalMachine).OpenSubKey("Software");
                 //reg = reg.OpenSubKey("ODBC");
@@ -237,115 +252,253 @@ namespace SapHanaAddIn
                 //    instance = item;
                 //    string vvv = reg.GetValue(item).ToString();
                 //}
-               
+
+                //setup connection properties
                 ArcGIS.Desktop.Framework.Contracts.ComboBoxItem item2 = (ArcGIS.Desktop.Framework.Contracts.ComboBoxItem)cboEnv.cboBox.SelectedItem;
-                    ConnectionItem connitem = item2.Icon as ConnectionItem;
-                    string tst2 = new System.Net.NetworkCredential(string.Empty, connitem.pass).Password;
-                    // Provided that a login called gdb has been created and corresponding schema has been created with the required permissions.
-                    DatabaseConnectionProperties connectionProperties = new DatabaseConnectionProperties(EnterpriseDatabaseType.Hana)
-                    {
-                        AuthenticationMode = AuthenticationMode.DBMS,
-                        Instance = cboEnv.cboBox.Text, //@"sapqe2hana",
-                        User = connitem.userid,
-                        Password = tst2,
-                        Version = "dbo.DEFAULT"
-                    };
+                ConnectionItem connitem = item2.Icon as ConnectionItem;
+                string tst2 = new System.Net.NetworkCredential(string.Empty, connitem.pass).Password;
+                DatabaseConnectionProperties connectionProperties = new DatabaseConnectionProperties(EnterpriseDatabaseType.Hana)
+                {
+                    AuthenticationMode = AuthenticationMode.DBMS,
+                    Instance = cboEnv.cboBox.Text, //@"sapqe2hana",
+                    User = connitem.userid,
+                    Password = tst2,
+                    Version = "dbo.DEFAULT"
+                };
 
-                    ////create a query layer
-                    //using (Geodatabase geodatabase = new Geodatabase(connectionProperties))
-                    //{
-                    //    Connector pCon = geodatabase.GetConnector();
-                    //    pCon.ToString();
-                    //}
+                //==================had to break code up more with using statements cause kept having thread probs
 
-                    string ts = _querytext.SelectString;
+                //create table name for the layer
+                Random r = new Random();
+                int n = r.Next();
+                string s = n.ToString();
+                s = s.Substring(s.Length - 4);
+                string lyrname = _currentTable + "_" + s;
 
-                    if (ts.Trim().Length < 1)
-                    {
-                        ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Please enter the command text.", "Empty command text");
-                        return;
-                    }
-
-                    string qtest = "";
-                    string sc = _spatialCol.SelectString;
-                    if (sc != "none" && sc != "")
-                    {
-                        qtest = ts.Replace(sc, sc + ".st_aswkt()" + " as " + sc);
-                    }
-                    else
-                    {
-                        qtest = ts;
-                    }
+                //get all the variables needed from qds first
+                string qtest = _querytext.SelectString.Trim();
+                string oflds = "";
+                IReadOnlyList<Field> lst;
+                string db_sc = SpatialCol.SelectString;
+                string esri_sc = "";
+                string db_oc = ObjidCol.SelectString;
+                string esri_oc = "";
+                GeometryType st = GeometryType.Unknown;
+                SpatialReference sr = null;
+                string sri = "";
 
                 using (Database db = new Database(connectionProperties))
                 {
-
-                    //create table name for the layer
-                    Random r = new Random();
-                    int n = r.Next();
-                    string s = n.ToString();
-                    s = s.Substring(s.Length - 4);
-                    string lyrname = _currentTable + "_" + s;
-
-                    //create query layer
-                    ArcGIS.Core.Data.QueryDescription qds = db.GetQueryDescription(qtest, lyrname);
-                    ArcGIS.Core.Data.QueryDescription qds2 = null;
-                    string oflds = qds.GetObjectIDFields();
-                    string oc = "";
-                    string fakeObjSql = "none";
-                    string qtest2 = "none";
-
-                    //determine objectid
-                    // Pro requires a pk
-                    // can't assume the field name OBJECTID in HANA is a valid field type to use for objectid according to Esri...
-                    if (oflds.Length > 0)
+                    if (qtest.Length < 1)
                     {
-                        oc = oflds.ToString().Split(',')[0];
-                        qds.SetObjectIDFields(oc);
+                        _strMessage.SelectString = "Empty Sql.";
+                        return;
                     }
                     else
                     {
-                        //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This table does not have a valid key field in the database.  Pro requires at least one field that can be used as an Objectid field. The field must be not null, contain unique values, and be one of the following data types: Integer, string, GUID or Date.  An attempt will be made to create a field for you.");
-                        //construct objectid as it is a required column in Pro
-                        //row_number() over(partition by " + tempid + ") as OBJECTID";))
-                        //string fakeObjCol = objidCol.Split('-')[1];
-                        var lst = qds.GetFields();
-                        if (lst != null)
-                        {
-                            if (lst.Count > 0)
-                            {
-                                oc = lst[0].Name;  //use this as a dummy field for the sql
-                            }
-                        }
-                        fakeObjSql = "row_number()" + " over(partition by " + oc + ")" + " as OBJID";
-                        qtest2 = qtest.Insert(ts.IndexOf("FROM") - 1, ", " + fakeObjSql);
-                        qds2 = db.GetQueryDescription(qtest2, lyrname);
-                    }
-
-                    ArcGIS.Core.Data.QueryDescription qdsfinal = null;
-                    if (fakeObjSql == "none")
-                    { qdsfinal = db.GetQueryDescription(qtest, lyrname); }
-                    else
-                    { qdsfinal = db.GetQueryDescription(qtest2, lyrname); }
-
-                    ArcGIS.Core.Data.Table pTab = db.OpenTable(qdsfinal);
-                    var serverConnection = new CIMInternetServerConnection { URL = "Fill in the URL of the WMS service" };
-                    var connt = new CIMWMTSServiceConnection { ServerConnection = serverConnection, };
-
-                    if (qdsfinal.GetShapeColumnName() != null)
-                    {
-                        FeatureLayer pFL = (FeatureLayer)LayerFactory.Instance.CreateLayer(pTab.GetDataConnection(), MapView.Active.Map, layerName: lyrname);
-                        pFL.Select(null, SelectionCombinationMethod.New);
-                        MapView.Active.ZoomToSelected();
-                    }
-                    else
-                    {
-                        StandaloneTable pFL = (StandaloneTable)StandaloneTableFactory.Instance.CreateStandaloneTable(pTab.GetDataConnection(), MapView.Active.Map, tableName: lyrname);
+                        QueryDescription qds = db.GetQueryDescription(qtest, lyrname);
+                        lst = qds.GetFields();
+                        oflds = qds.GetObjectIDFields();
+                        esri_sc = qds.GetShapeColumnName();
+                        esri_oc = qds.GetObjectIDColumnName();
+                        st = qds.GetShapeType();
+                        sr = qds.GetSpatialReference();
+                        sri = qds.GetSRID();
                     }
                 }
 
-            });
+                if (lst == null)   //table has no fields
+                    return;
 
+                //now do work with variables from qds
+                int objfieldcount = oflds.Split(',').Length - 1;
+                string objForSet = "";
+                bool hasObj = false;
+                string fakeObjSql = "";
+                bool hasShape = false;
+                bool hasSlashes = false;
+
+                //==============determine field to use for objectid - pro requires a pk - can't assume the field name OBJECTID in HANA is a valid field type to use for objectid according to Esri...
+                if (objfieldcount == 0)
+                {
+                    //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This table does not have a valid key field in the database.  Pro requires at least one field that can be used as an Objectid field. The field must be not null, contain unique values, and be one of the following data types: Integer, string, GUID or Date.  An attempt will be made to create a field for you.");
+                    _strMessage.SelectString = "Table missing key.";
+                    //does db think there is a pk?
+                    if (db_oc != null)
+                    {
+                        //trick esri into use this?
+                        //objForSet = db_oc;
+                        //hasObj = true;
+                        //ObjidCol.SelectString = db_oc;
+
+                        objForSet = esri_oc;
+                        ObjidCol.SelectString = "default";
+                    }
+                    else
+                    {
+                        //last try to construct objectid as it is a required column in Pro
+                        //row_number() over(partition by " + tempid + ") as OBJECTID";))
+                        //string fakeObjCol = objidCol.Split('-')[1];
+                        if (lst != null && lst.Count > 0)
+                        {
+                            string oc = lst[0].Name;  //use this as a dummy field to put the partition statement in (as long as it is not named "OBJECTID" esri crashes)
+
+                            //if (esri_oc == "OBJECTID")
+                            //{
+                            //    //drop OBJECTID from field list
+                            //    qtest0 = qtest0.Replace("OBJECTID,", "");
+                            //}
+                            //else
+                            //{ }
+
+                            fakeObjSql = ", row_number()" + " over(partition by " + oc + ")" + " as QID ";
+                            objForSet = oc;
+                            ObjidCol.SelectString = "default";
+                            _strMessage.SelectString = "Attempted to create key.";
+                        }
+                    }
+                }
+                if (objfieldcount == 1)
+                {
+                    esri_oc = oflds.ToString().Split(',')[0];
+                    objForSet = esri_oc;              // prepare for SetObjectidfeilds
+                    ObjidCol.SelectString = "ESRI_OID";  //updateprop
+                    hasObj = true;
+                }
+                if (objfieldcount > 1)
+                {
+                    //fix backslash slash bug
+                    //string fldLst = "";
+                    //int cnt = 0;
+
+                    //foreach (Field fld in lst)
+                    //{
+                    //    //fix bug with slash in column namestring
+                    //    if (fld.Name.IndexOfAny(new char[] { ' ', '/', '\\' }) != -1)
+                    //    {
+                    //        var f = '"' + fld.Name + '"';
+                    //        if (cnt == 0)
+                    //        {
+                    //            fldLst = fldLst + f;  //first field don't put a comma
+                    //        }
+                    //        else
+                    //        {
+                    //            fldLst = fldLst + "," + f;
+                    //        }
+                    //        hasSlashes = true;
+                    //    }
+                    //    else
+                    //    {
+                    //        if (cnt == 0)
+                    //        {
+                    //            fldLst = fldLst + fld.Name;
+                    //        }
+                    //        else
+                    //        {
+                    //            fldLst = fldLst + "," + fld.Name;
+                    //        }
+                    //    }
+
+                    //    cnt = cnt + 1;
+                    //}
+                    //objForSet = fldLst;   // prepare for SetObjectidfeilds
+
+                    //just use first field in lst as objid
+                    objForSet = oflds.ToString().Split(',')[0];
+                    ObjidCol.SelectString = "multi";    //updateprop
+                    hasObj = true;
+                }
+
+                //==================determine is shape field
+                if (esri_sc != null && esri_sc != "")
+                {
+                    //determine shape type
+                    //TODO 
+
+                    //determine if it should be converted to .st_aswkt
+                    //TODO
+
+                    SpatialCol.SelectString = esri_sc;
+                    hasShape = true;
+                }
+                else
+                {
+                    // //if (db_sc != "none")   // (data_type_id = 29812)
+                    //TODO - why does db think there is an ST_GEOMETRY and esri doesn't?
+                    SpatialCol.SelectString = "none";
+                    
+                }
+
+                //==============fix the sql statement based on new knowledge
+                string qtest1 = "";
+                string qtest2 = "";
+                //add conversion for objid to ssql
+                if (hasObj == false)
+                {
+                    int inx = qtest.IndexOf("FROM") - 1;
+                    qtest1 = qtest.Insert(inx, fakeObjSql);
+                }
+                else
+                {
+                    qtest1 = qtest;
+                }
+                //add conversion for shape to sql
+                if (hasShape)
+                {
+                    qtest2 = qtest1; // qtest1.Replace(esri_sc, esri_sc + ".st_aswkt()" + " as " + esri_sc);
+                }
+                else
+                {
+                    qtest2 = qtest1;
+                }
+
+
+
+                //=============finally add to map
+                try
+                {
+                    Database db2 = new Database(connectionProperties);
+                    QueryDescription qdsfinal = db2.GetQueryDescription(qtest2, lyrname);  //reapply with new sql statement
+                    if (objForSet != "none")
+                    {
+                        qdsfinal.SetObjectIDFields(objForSet);
+                    }
+                    //qdsfinal.SetShapeType(GeometryType.Point);
+                    //qdsfinal.SetSpatialReference;
+                    //qdsfinal.SetSRID
+                    Table pTab2 = db2.OpenTable(qdsfinal);
+
+                    if (hasShape)
+                    {
+                        // Add a new layer to the map
+                        FeatureLayer pFL = (FeatureLayer)LayerFactory.Instance.CreateLayer(pTab2.GetDataConnection(), MapView.Active.Map, layerName: lyrname);
+                        pFL.Select(null, SelectionCombinationMethod.New);
+                        MapView.Active.ZoomToSelected();
+                        pFL.ClearSelection();
+
+                        _strMessage.SelectString = "Layer added.";
+
+                    }
+                    else
+                    {
+
+                        //if (objForSet != "none")
+                        //{
+                        //    if (hasSlashes)
+                        //    { qdsfinal.SetObjectIDFields(objForSet); }
+                        //}
+
+                        StandaloneTable pFL = (StandaloneTable)StandaloneTableFactory.Instance.CreateStandaloneTable(pTab2.GetDataConnection(), MapView.Active.Map, tableName: lyrname);
+                        _strMessage.SelectString = "Table added.";
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    _strMessage.SelectString = ex.Message;
+                }
+
+        });
 
         }
         public async Task SetTotalRecordsCount()
@@ -558,6 +711,24 @@ namespace SapHanaAddIn
             {
                 _actrecCount = value;
                 NotifyPropertyChanged("ActRecCount");
+            }
+        }
+
+        private SelectionString _strMessage;
+        public SelectionString StrMessage
+        {
+            get
+            {
+                if (_strMessage == null)
+                {
+                    _strMessage = new SelectionString();
+                }
+                return _strMessage;
+            }
+            set
+            {
+                _strMessage = value;
+                NotifyPropertyChanged("StrMessage");
             }
         }
         #endregion

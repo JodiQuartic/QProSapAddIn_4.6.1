@@ -127,6 +127,9 @@
     <AddInContent Include="Images\VersionConflictsWindow32.png" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ObservableObject.cs" />
+    <Compile Include="PropertySupport.cs" />
+    <Compile Include="RelayCommand.cs" />
     <Compile Include="SchemaViewModel.cs" />
     <Compile Include="Schema.cs" />
     <Compile Include="WaitCursor.cs" />
@@ -176,12 +179,6 @@
   </ItemGroup>
   <ItemGroup>
     <AddInContent Include="EULA.rtf" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\MvvmExample\MvvmExample\MicroMvvm\MicroMvvm.csproj">
-      <Project>{9efe6cbd-df21-436e-9f81-e258bab0b653}</Project>
-      <Name>MicroMvvm</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--

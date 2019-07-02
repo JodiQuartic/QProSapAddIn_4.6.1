@@ -78,31 +78,36 @@
                 </DataGrid>
             </Grid>
           
-                    <Button Name="btnAddTOC" Content="Add to Map Contents"  HorizontalAlignment="Right" Click="btnAddTOC_Click"
+                    <Button Name="btnAddTOC" Content="Add to Map"  HorizontalAlignment="Right" Click="btnAddTOC_Click"
                             Style="{DynamicResource Esri_Button}">
             </Button>
 
             <DockPanel>
                 <StatusBar Background="LightGray" HorizontalAlignment="Stretch" Width="auto">
-                    <StatusBarItem HorizontalAlignment="Center" >
-                        <TextBlock Name="txtTotRecCount"  Text="{Binding TotRecCount.SelectString, StringFormat='Total: {0}'}"          
+                    <StatusBarItem HorizontalAlignment="Left" >
+                        <!--TextBlock Name="txtTotRecCount"  Text="{Binding TotRecCount.SelectString, StringFormat='Total: {0}'}"          
                                 ToolTip="Total number of rows in the database table"
                                    Foreground="Black"            
-                                    VerticalAlignment="Center"/>
+                                    VerticalAlignment="Center"/-->
                     </StatusBarItem>
-                    <StatusBarItem HorizontalAlignment="Center" >
-                        <TextBlock Name="txtActRecCount"  Text="{Binding ActRecCount.SelectString, StringFormat='Returned: {0}'}"          
+                    <StatusBarItem HorizontalAlignment="Left" >
+                        <TextBlock Name="txtActRecCount"  Text="{Binding ActRecCount.SelectString, StringFormat='Rows returned: {0}'}"          
                                 ToolTip="Number of rows returned from the database using the sql statement"
                                    Foreground="Black"          
                                     VerticalAlignment="Center"/>
                     </StatusBarItem>
-                    <StatusBarItem HorizontalAlignment="Center">
+                    <StatusBarItem HorizontalAlignment="Left">
                         <TextBlock  Name="txtSpatialCol" Text="{Binding SpatialCol.SelectString, StringFormat='Spatial: {0}'}" ToolTip="Field name that is Spatial Type"
                                    VerticalAlignment="Center"
                                   Foreground="Black"  />
                     </StatusBarItem>
-                    <StatusBarItem HorizontalAlignment="Center" >
+                    <StatusBarItem HorizontalAlignment="Left" >
                         <TextBlock Name="txtObjidCol"  Text="{Binding ObjidCol.SelectString ,StringFormat='Objectid: {0}'}" ToolTip="Field name that is a Primary Key"
+                                   Foreground="Black"            
+                                    VerticalAlignment="Center"/>
+                    </StatusBarItem>
+                    <StatusBarItem HorizontalAlignment="Left" >
+                        <TextBlock Name="txtMessage"  Text="{Binding StrMessage.SelectString}" ToolTip="Field name that is a Primary Key"
                                    Foreground="Black"            
                                     VerticalAlignment="Center"/>
                     </StatusBarItem>

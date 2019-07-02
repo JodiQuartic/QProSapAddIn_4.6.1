@@ -10,7 +10,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using ArcGIS.Core.Geometry;
-
 namespace SapHanaAddIn
 {
     /// <summary>
@@ -26,6 +25,7 @@ namespace SapHanaAddIn
         public string _currenttable = "";
         public string _tbls = "";
 
+        
         public TableViewerPanelView()
         {
             InitializeComponent();
@@ -34,6 +34,8 @@ namespace SapHanaAddIn
             //  Get the reference to it here, so we can use it in the button click event.
             TableViewerPanelViewModel _tableviewerpanelViewModel = (TableViewerPanelViewModel)base.DataContext;
         }
+
+        
 
         private void btnExecute_Click(object sender, RoutedEventArgs e)
         {
@@ -127,7 +129,6 @@ namespace SapHanaAddIn
             });
 
         }
-
 
         public async Task AddToTOCCb()
         {
