@@ -10,6 +10,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using ArcGIS.Core.Geometry;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
+
 namespace SapHanaAddIn
 {
     /// <summary>
@@ -46,7 +48,7 @@ namespace SapHanaAddIn
         }
         private void btnAddTOC_Click(object sender, RoutedEventArgs e)
         {
-            ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            QueuedTask.Run(() =>
             {
                 Task r = AddToTOCCb();
             });
@@ -132,13 +134,20 @@ namespace SapHanaAddIn
 
         public async Task AddToTOCCb()
         {
-            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            
+
+            await QueuedTask.Run(() =>
             {
                 bool dpexists = FrameworkApplication.DockPaneManager.IsDockPaneCreated("SapHanaAddIn_TableViewerPanel");
                 if (dpexists)
                 {
                     TableViewerPanelViewModel vm = FrameworkApplication.DockPaneManager.Find("SapHanaAddIn_TableViewerPanel") as TableViewerPanelViewModel;
-                    Task r = vm.AddToTOCCallback();
+
+                    //var pd = new ProgressDialog("Adding data to map.", "Canceled", false);
+                    //pd.Show();
+                    var cpd = new CancelableProgressorSource();
+                   
+                    Task r = vm.AddToTOCCallback(cpd);
                 }
             });
         }

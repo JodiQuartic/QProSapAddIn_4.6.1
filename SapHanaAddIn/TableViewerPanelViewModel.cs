@@ -12,7 +12,7 @@ using ArcGIS.Core.CIM;
 using ArcGIS.Core.Data;
 using ArcGIS.Desktop.Mapping;
 using Sap.Data.Hana;
-
+using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Core.Geometry;
 using System.Threading;
 
@@ -56,60 +56,65 @@ namespace SapHanaAddIn
         }
 
         #region Tasks
-        public async Task Progressor()
-        {
-            ArcGIS.Desktop.Framework.Threading.Tasks.ProgressorSource ps = new ArcGIS.Desktop.Framework.Threading.Tasks.ProgressorSource("Doing my thing...", false);
-
-            int numSecondsDelay = 5;
-            //If you run this in the DEBUGGER you will NOT see the dialog
-            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() => Task.Delay(numSecondsDelay * 1000).Wait(), ps.Progressor);
-        }
         public async Task RefreshSchemasCallback()
         {
-            await QueuedTask.Run(() =>
+            try
             {
-
-                HanaCommand cmd = new HanaCommand("select TOP 1000 * from schemas", Globals.hanaConn);
-                HanaDataReader dr = cmd.ExecuteReader();
-                ObservableCollection<string> temp = new ObservableCollection<string>();
-                while (dr.Read())
+                await QueuedTask.Run(() =>
                 {
-                    Schema ss = new Schema { SchemaName = dr.GetString(0) };
-                    temp.Add(ss.SchemaName);
-                }
-                dr.Close();
-                lock (_schemasLock)
-                {
-                    SchemaColl = temp;
-                }
 
-            });
+                    HanaCommand cmd = new HanaCommand("select TOP 1000 * from schemas", Globals.hanaConn);
+                    HanaDataReader dr = cmd.ExecuteReader();
+                    ObservableCollection<string> temp = new ObservableCollection<string>();
+                    while (dr.Read())
+                    {
+                        Schema ss = new Schema { SchemaName = dr.GetString(0) };
+                        temp.Add(ss.SchemaName);
+                    }
+                    dr.Close();
+                    lock (_schemasLock)
+                    {
+                        SchemaColl = temp;
+                    }
+
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error in RefreshSchemas:  " + ex.ToString(), "Error");
+            }
         }
         public async Task RefreshTablesCallback()
         {
-            await QueuedTask.Run(() =>
+            try
             {
-                HanaCommand cmd = new HanaCommand("SELECT TOP 1000 table_name FROM sys.tables where schema_name = '" + _currentSchema + "'", Globals.hanaConn);
-                HanaDataReader dr = cmd.ExecuteReader();
-                ObservableCollection<string> temp = new ObservableCollection<string>();
-                while (dr.Read())
+                await QueuedTask.Run(() =>
                 {
-                    temp.Add(dr.GetString(0));
-                }
-                dr.Close();
-                lock (_tablesLock)
-                {
-                    Tables = temp;
-                }
-                
-            });
+                    HanaCommand cmd = new HanaCommand("SELECT TOP 1000 table_name FROM sys.tables where schema_name = '" + _currentSchema + "'", Globals.hanaConn);
+                    HanaDataReader dr = cmd.ExecuteReader();
+                    ObservableCollection<string> temp = new ObservableCollection<string>();
+                    while (dr.Read())
+                    {
+                        temp.Add(dr.GetString(0));
+                    }
+                    dr.Close();
+                    lock (_tablesLock)
+                    {
+                        Tables = temp;
+                    }
+
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error in RefreshTables:  " + ex.ToString(), "Error");
+            }
         }
         public async Task TableSelectedCallback()
         {
+            try { 
             await QueuedTask.Run(() =>
             {
-                //try
-                //{
                 //clear stuff out
                 if (Results != null)
                 {
@@ -171,17 +176,16 @@ namespace SapHanaAddIn
                 }
                 dr.Close();
 
-                //}
-                //catch (Exception ex)
-                //{
-                //    FrameworkApplication.State.Deactivate("condition_state_isconnected");
-                //    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error in SetPropertiesForTable. " + ex.Message);
-                //}
-
             });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error in TableSelected:  " + ex.ToString(), "Error");
+            }
         }
         public async Task ExecuteSqlCallback()
         { 
+            try { 
             await QueuedTask.Run(() =>
             {
                 //check for valid connection
@@ -228,16 +232,27 @@ namespace SapHanaAddIn
 
                 ActRecCount.SelectString = dt.DefaultView.Count.ToString();
             });
-    }
-        public async Task AddToTOCCallback()
-        {
-            await QueuedTask.Run(() =>
+
+            }
+            catch (Exception ex)
             {
-                if (MapView.Active == null)
+                MessageBox.Show("Error in ExecuteSql:  " + ex.ToString(), "Error");
+            }
+        }
+        public async Task AddToTOCCallback(CancelableProgressorSource cpd)
+        {
+            try
+            {
+                await QueuedTask.Run(() =>
                 {
-                    _strMessage.SelectString = "There is no active map view.  Please select a map and try again.";
+                    
+                    if (MapView.Active == null)
+                {
+                    _strMessage.SelectString = "No active map view.";
+                    cpd.Message = "There is no active map view.  Please select a map and try again.";
                     return;
                 }
+
 
 
                 //===This is for reading the odbc data sources from the machine registery and is not currently being used.
@@ -355,7 +370,8 @@ namespace SapHanaAddIn
                             objForSet = oc;
                             ObjidCol.SelectString = "default";
                             _strMessage.SelectString = "Attempted to create key.";
-                        }
+                            cpd.Message = "This data does snot have a key field to use for OBJECTID.  An attempt will be made to create one.";
+                            }
                     }
                 }
                 if (objfieldcount == 1)
@@ -364,7 +380,8 @@ namespace SapHanaAddIn
                     objForSet = esri_oc;              // prepare for SetObjectidfeilds
                     ObjidCol.SelectString = "ESRI_OID";  //updateprop
                     hasObj = true;
-                }
+                        cpd.Message = "This data has a valid key field to use for OBJECTID.";
+                    }
                 if (objfieldcount > 1)
                 {
                     //fix backslash slash bug
@@ -407,7 +424,8 @@ namespace SapHanaAddIn
                     objForSet = oflds.ToString().Split(',')[0];
                     ObjidCol.SelectString = "multi";    //updateprop
                     hasObj = true;
-                }
+                        cpd.Message = "This data has a valid key field to use for OBJECTID.";
+                    }
 
                 //==================determine is shape field
                 if (esri_sc != null && esri_sc != "")
@@ -420,14 +438,16 @@ namespace SapHanaAddIn
 
                     SpatialCol.SelectString = esri_sc;
                     hasShape = true;
-                }
-                else
+                    cpd.Message = "This data has a valid shapefield";
+
+                    }
+                    else
                 {
                     // //if (db_sc != "none")   // (data_type_id = 29812)
                     //TODO - why does db think there is an ST_GEOMETRY and esri doesn't?
                     SpatialCol.SelectString = "none";
-                    
-                }
+                        cpd.Message = "This data does  not have a valid shapefield";
+                    }
 
                 //==============fix the sql statement based on new knowledge
                 string qtest1 = "";
@@ -452,61 +472,59 @@ namespace SapHanaAddIn
                     qtest2 = qtest1;
                 }
 
-
-
                 //=============finally add to map
-                try
+                Database db2 = new Database(connectionProperties);
+                QueryDescription qdsfinal = db2.GetQueryDescription(qtest2, lyrname);  //reapply with new sql statement
+                if (objForSet != "none")
                 {
-                    Database db2 = new Database(connectionProperties);
-                    QueryDescription qdsfinal = db2.GetQueryDescription(qtest2, lyrname);  //reapply with new sql statement
-                    if (objForSet != "none")
-                    {
-                        qdsfinal.SetObjectIDFields(objForSet);
-                    }
-                    //qdsfinal.SetShapeType(GeometryType.Point);
-                    //qdsfinal.SetSpatialReference;
-                    //qdsfinal.SetSRID
-                    Table pTab2 = db2.OpenTable(qdsfinal);
+                    qdsfinal.SetObjectIDFields(objForSet);
+                }
+                //qdsfinal.SetShapeType(GeometryType.Point);
+                //qdsfinal.SetSpatialReference;
+                //qdsfinal.SetSRID
+                Table pTab2 = db2.OpenTable(qdsfinal);
 
-                    if (hasShape)
-                    {
-                        // Add a new layer to the map
-                        FeatureLayer pFL = (FeatureLayer)LayerFactory.Instance.CreateLayer(pTab2.GetDataConnection(), MapView.Active.Map, layerName: lyrname);
-                        pFL.Select(null, SelectionCombinationMethod.New);
-                        MapView.Active.ZoomToSelected();
-                        pFL.ClearSelection();
+                if (hasShape)
+                {
+                    // Add a new layer to the map
+                    FeatureLayer pFL = (FeatureLayer)LayerFactory.Instance.CreateLayer(pTab2.GetDataConnection(), MapView.Active.Map, layerName: lyrname);
+                    pFL.Select(null, SelectionCombinationMethod.New);
+                    MapView.Active.ZoomToSelected();
+                    pFL.ClearSelection();
 
-                        _strMessage.SelectString = "Layer added.";
+                    _strMessage.SelectString = "Layer added.";
+                     cpd.Message = "Layer added successsful to map.";
 
                     }
                     else
-                    {
-
-                        //if (objForSet != "none")
-                        //{
-                        //    if (hasSlashes)
-                        //    { qdsfinal.SetObjectIDFields(objForSet); }
-                        //}
-
-                        StandaloneTable pFL = (StandaloneTable)StandaloneTableFactory.Instance.CreateStandaloneTable(pTab2.GetDataConnection(), MapView.Active.Map, tableName: lyrname);
-                        _strMessage.SelectString = "Table added.";
-                    }
-
-                }
-                catch (Exception ex)
                 {
-                    _strMessage.SelectString = ex.Message;
-                }
 
-        });
+                    //if (objForSet != "none")
+                    //{
+                    //    if (hasSlashes)
+                    //    { qdsfinal.SetObjectIDFields(objForSet); }
+                    //}
+
+                    StandaloneTable pFL = (StandaloneTable)StandaloneTableFactory.Instance.CreateStandaloneTable(pTab2.GetDataConnection(), MapView.Active.Map, tableName: lyrname);
+                    _strMessage.SelectString = "Table added.";
+                     cpd.Message = "Standalone table added successsful to map.";
+                    }
+                    cpd.Dispose();
+                });
+                
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error in AddToMap:  " + ex.ToString(), "Error");
+            }
 
         }
         public async Task SetTotalRecordsCount()
         {
-            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
+            try {
+
+                await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
             {
-                try
-                {
                     string qtst = "SELECT COUNT(*) FROM  " + _currentSchema + "." + _currentTable;
                     HanaCommand cmd2 = new HanaCommand(qtst, Globals.hanaConn);
                     HanaDataReader dr2 = null;
@@ -530,12 +548,14 @@ namespace SapHanaAddIn
                             }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error TotRecordCount. " + ex.Message);
-                }
+              
             });
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error in SetTotalRecordsCount:  " + ex.ToString(), "Error");
+            }
         }
         #endregion
 
