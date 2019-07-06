@@ -23,9 +23,7 @@ namespace SapHanaAddIn
         public const string _dockPaneID = "SapHanaAddIn_TableViewerPanel";
 
         //locks to update collections to avoid thread collisions
-        private Object _schemasLock = new Object();
-        private Object _tablesLock = new Object();
-        private Object _resultsLock = new Object();
+        private Object _aLock = new Object();
 
         protected TableViewerPanelViewModel()
         {
@@ -39,7 +37,7 @@ namespace SapHanaAddIn
                 return;
             }
             else
-            {
+            {              
                 pane.Activate();
             }
         }
@@ -62,6 +60,16 @@ namespace SapHanaAddIn
             {
                 await QueuedTask.Run(() =>
                 {
+                    //clear stuff out
+                    //clear props related to table
+                    //_tables.Clear();
+                    //_actrecCount.SelectString = "";
+                    //_querytext.SelectString = "";
+                    //_objidCol.SelectString = "";
+                    //_spatialCol.SelectString = "";
+                    //_strMessage.SelectString = "";
+                    //_btnExeVis = false;
+                    //_btnMapVis = false;
 
                     HanaCommand cmd = new HanaCommand("select TOP 1000 * from schemas", Globals.hanaConn);
                     HanaDataReader dr = cmd.ExecuteReader();
@@ -72,16 +80,25 @@ namespace SapHanaAddIn
                         temp.Add(ss.SchemaName);
                     }
                     dr.Close();
-                    lock (_schemasLock)
+                    lock (_aLock)
                     {
                         SchemaColl = temp;
                     }
+                    lock (_aLock)
+                    {
+                       BtnExeVis=false;
+                    }
+                    lock (_aLock)
+                    {
+                        BtnMapVis = false;
+                    }
+
 
                 });
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error in RefreshSchemas:  " + ex.ToString(), "Error");
+                MessageBox.Show("Error in RefreshSchemas:  " + ex.Message.ToString(), "Error");
             }
         }
         public async Task RefreshTablesCallback()
@@ -90,6 +107,28 @@ namespace SapHanaAddIn
             {
                 await QueuedTask.Run(() =>
                 {
+                    //clear stuff out
+                    //clear props related to table
+                    //_actrecCount.SelectString = "";
+                    //_querytext.SelectString = "";
+                    //_objidCol.SelectString = "";
+                    //_spatialCol.SelectString = "";
+                    //_strMessage.SelectString = "";
+                    //_btnExeVis = false;
+                    //_btnMapVis = false;
+
+                    if (Results != null)
+                    {
+                        lock (_aLock)
+                        {
+                            Results = null;
+                        }
+                    }
+                    lock (_aLock)
+                    {
+                        BtnMapVis = false;
+                    }
+
                     HanaCommand cmd = new HanaCommand("SELECT TOP 1000 table_name FROM sys.tables where schema_name = '" + _currentSchema + "'", Globals.hanaConn);
                     HanaDataReader dr = cmd.ExecuteReader();
                     ObservableCollection<string> temp = new ObservableCollection<string>();
@@ -98,28 +137,40 @@ namespace SapHanaAddIn
                         temp.Add(dr.GetString(0));
                     }
                     dr.Close();
-                    lock (_tablesLock)
+
+                    if (temp.Count==0)
+                    { MessageBox.Show("There are no tables in the selected schema."); }
+                    else
                     {
-                        Tables = temp;
+                        lock (_aLock)
+                        {
+                            Tables = temp;
+                        }
                     }
+
 
                 });
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error in RefreshTables:  " + ex.ToString(), "Error");
+                MessageBox.Show("Error in RefreshTables:  " + ex.Message.ToString(), "Error");
             }
         }
         public async Task TableSelectedCallback()
         {
             try { 
+
             await QueuedTask.Run(() =>
             {
                 //clear stuff out
+                _strMessage.SelectString = "";
+
                 if (Results != null)
                 {
-                    lock (_resultsLock)
-                    { Results = null; }
+                    lock (_aLock)
+                    {
+                        Results = null;
+                    }
                 }
 
                 //get field names
@@ -142,45 +193,53 @@ namespace SapHanaAddIn
                 //set default querytext string for the UI txt box 
                 _querytext.SelectString = "SELECT TOP 1000 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSchema + "\".\"" + _currentTable + "\"";
 
-                //find spatial column
-                SpatialCol.SelectString = "";
-                cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "' and data_type_id = 29812";
-                dr = cmd.ExecuteReader();
-                if (dr.HasRows)
-                {
-                    while (dr.Read())
-                    {
-                        _spatialCol.SelectString = dr.GetString(0);
-                    }
-                }
-                else
-                {
-                    _spatialCol.SelectString = "none";
-                }
-                dr.Close();
+                ////find spatial column
+                //SpatialCol.SelectString = "";
+                //cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "' and data_type_id = 29812";
+                //dr = cmd.ExecuteReader();
+                //if (dr.HasRows)
+                //{
+                //    while (dr.Read())
+                //    {
+                //        _spatialCol.SelectString = dr.GetString(0);
+                //    }
+                //}
+                //else
+                //{
+                //    _spatialCol.SelectString = "none";
+                //}
+                //dr.Close();
 
-                //find objectid
-                ObjidCol.SelectString = "";
-                cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "' and COLUMN_NAME = 'OBJECTID'";
-                dr = cmd.ExecuteReader();
-                if (dr.HasRows)
-                {
-                    while (dr.Read())
-                    {
-                        _objidCol.SelectString = dr.GetString(0);
-                    }
-                }
-                else
-                {
-                    _objidCol.SelectString = "none";
-                }
-                dr.Close();
+                ////find objectid
+                //ObjidCol.SelectString = "";
+                //cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "' and COLUMN_NAME = 'OBJECTID'";
+                //dr = cmd.ExecuteReader();
+                //if (dr.HasRows)
+                //{
+                //    while (dr.Read())
+                //    {
+                //        _objidCol.SelectString = dr.GetString(0);
+                //    }
+                //}
+                //else
+                //{
+                //    _objidCol.SelectString = "none";
+                //}
+                //dr.Close();
 
+                lock (_aLock)
+                {
+                    BtnExeVis = true;
+                }
             });
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error in TableSelected:  " + ex.ToString(), "Error");
+                MessageBox.Show("Error in TableSelected:  " + ex.Message.ToString(), "Error");
+                lock (_aLock)
+                {
+                    BtnExeVis = false;
+                }
             }
         }
         public async Task ExecuteSqlCallback()
@@ -191,16 +250,29 @@ namespace SapHanaAddIn
                 //check for valid connection
                 if (Globals.hanaConn == null || Globals.hanaConn.State != ConnectionState.Open)
                 {
-                    //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Connect to a database first.", "Not connected");
+                   MessageBox.Show("Connect to a database first.", "Not connected");
+                    lock (_aLock)
+                    {
+                        BtnMapVis = false;
+                    }
+
                     return;
                 }
 
                 //string txtSQLStatement = txtQueryText.Text;
                 string ts = _querytext.SelectString;
 
-                if (ts.Trim().Length < 1)
+                if (ts.Trim().Length < 10)
                 {
-                    //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Please enter the command text.", "Empty command text");
+                    MessageBox.Show("Please enter complete command text.", "Empty command text");
+                    lock (_aLock)
+                    {
+                        BtnExeVis = false;
+                    }
+                    lock (_aLock)
+                    {
+                        BtnMapVis = false;
+                    }
                     return;
                 }
 
@@ -224,19 +296,47 @@ namespace SapHanaAddIn
                     dt.Load(dr);
                 }
                 dr.Close();
-                
-                lock (_resultsLock)
-                {
-                    Results = dt.DefaultView;
-                }
 
                 ActRecCount.SelectString = dt.DefaultView.Count.ToString();
+
+                if (_actrecCount.SelectString=="0")
+                {
+                    _actrecCount.SelectString = "";
+                    _objidCol.SelectString = "";
+                    _spatialCol.SelectString = "";
+                    _strMessage.SelectString = "No Rows.";
+                    MessageBox.Show("There are no rows in the selected table.");
+
+                    lock (_aLock)
+                    {
+                        BtnMapVis = false;
+                    }
+                    return;
+                }
+                else
+                {
+                    lock (_aLock)
+                    {
+                        Results = dt.DefaultView;
+                    }
+                    lock (_aLock)
+                    {
+                        BtnMapVis = true;
+                    }
+
+                    _strMessage.SelectString = "Rows returned.";
+
+                }
             });
 
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error in ExecuteSql:  " + ex.ToString(), "Error");
+                MessageBox.Show("The sql statement was not able to execute.  " + ex.Message.ToString() + " Please review the sql statement." );
+                lock (_aLock)
+                {
+                    BtnMapVis = false;
+                }
             }
         }
         public async Task AddToTOCCallback(CancelableProgressorSource cpd)
@@ -269,7 +369,7 @@ namespace SapHanaAddIn
                 //}
 
                 //setup connection properties
-                ArcGIS.Desktop.Framework.Contracts.ComboBoxItem item2 = (ArcGIS.Desktop.Framework.Contracts.ComboBoxItem)cboEnv.cboBox.SelectedItem;
+                ComboBoxItem item2 = (ComboBoxItem)cboEnv.cboBox.SelectedItem;
                 ConnectionItem connitem = item2.Icon as ConnectionItem;
                 string tst2 = new System.Net.NetworkCredential(string.Empty, connitem.pass).Password;
                 DatabaseConnectionProperties connectionProperties = new DatabaseConnectionProperties(EnterpriseDatabaseType.Hana)
@@ -307,7 +407,9 @@ namespace SapHanaAddIn
                     if (qtest.Length < 1)
                     {
                         _strMessage.SelectString = "Empty Sql.";
-                        return;
+                            BtnExeVis = false;
+                            BtnMapVis = false;
+                            return;
                     }
                     else
                     {
@@ -336,7 +438,6 @@ namespace SapHanaAddIn
                 //==============determine field to use for objectid - pro requires a pk - can't assume the field name OBJECTID in HANA is a valid field type to use for objectid according to Esri...
                 if (objfieldcount == 0)
                 {
-                    //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("This table does not have a valid key field in the database.  Pro requires at least one field that can be used as an Objectid field. The field must be not null, contain unique values, and be one of the following data types: Integer, string, GUID or Date.  An attempt will be made to create a field for you.");
                     _strMessage.SelectString = "Table missing key.";
                     //does db think there is a pk?
                     if (db_oc != null)
@@ -346,7 +447,7 @@ namespace SapHanaAddIn
                         //hasObj = true;
                         //ObjidCol.SelectString = db_oc;
 
-                        objForSet = esri_oc;
+                        objForSet = "none";
                         ObjidCol.SelectString = "default";
                     }
                     else
@@ -370,7 +471,7 @@ namespace SapHanaAddIn
                             objForSet = oc;
                             ObjidCol.SelectString = "default";
                             _strMessage.SelectString = "Attempted to create key.";
-                            cpd.Message = "This data does snot have a key field to use for OBJECTID.  An attempt will be made to create one.";
+                            cpd.Message = "This data does not have a key field to use for OBJECTID.  An attempt will be made to create one.";
                             }
                     }
                 }
@@ -475,13 +576,20 @@ namespace SapHanaAddIn
                 //=============finally add to map
                 Database db2 = new Database(connectionProperties);
                 QueryDescription qdsfinal = db2.GetQueryDescription(qtest2, lyrname);  //reapply with new sql statement
-                if (objForSet != "none")
+
+                if (objForSet == "none")
+                {
+                    MessageBox.Show("This table does not have a valid key field in the database.  Pro requires at least one field that can be used as an Objectid field. The field must be not null, contain unique values, and be one of the following data types: Integer, string, GUID or Date.");
+                }
+                else if (objForSet != "none")
                 {
                     qdsfinal.SetObjectIDFields(objForSet);
                 }
+
                 //qdsfinal.SetShapeType(GeometryType.Point);
                 //qdsfinal.SetSpatialReference;
                 //qdsfinal.SetSRID
+
                 Table pTab2 = db2.OpenTable(qdsfinal);
 
                 if (hasShape)
@@ -494,7 +602,7 @@ namespace SapHanaAddIn
 
                     _strMessage.SelectString = "Layer added.";
                      cpd.Message = "Layer added successsful to map.";
-
+                        MessageBox.Show("Layer added successsful to map.");
                     }
                     else
                 {
@@ -508,6 +616,7 @@ namespace SapHanaAddIn
                     StandaloneTable pFL = (StandaloneTable)StandaloneTableFactory.Instance.CreateStandaloneTable(pTab2.GetDataConnection(), MapView.Active.Map, tableName: lyrname);
                     _strMessage.SelectString = "Table added.";
                      cpd.Message = "Standalone table added successsful to map.";
+                     MessageBox.Show("Standalone table added successsful to map.");
                     }
                     cpd.Dispose();
                 });
@@ -515,7 +624,7 @@ namespace SapHanaAddIn
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error in AddToMap:  " + ex.ToString(), "Error");
+                MessageBox.Show("The table could not be added to ArcGIS Pro.  " + ex.Message.ToString() + " ArcGIS Pro requires a primary key and/or a valid spatial field of type ST_GEOMETRY. ");
             }
 
         }
@@ -554,7 +663,7 @@ namespace SapHanaAddIn
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error in SetTotalRecordsCount:  " + ex.ToString(), "Error");
+                MessageBox.Show("Error in SetTotalRecordsCount:  " + ex.Message.ToString());
             }
         }
         #endregion
@@ -577,6 +686,28 @@ namespace SapHanaAddIn
             set
             {
                 SetProperty(ref _heading2, value, () => Heading2);
+            }
+        }
+
+        private bool _btnExeVis = false;
+        public bool BtnExeVis
+        {
+            get { return _btnExeVis; }
+            set
+            {
+                SetProperty(ref _btnExeVis, value, () => BtnExeVis);
+                NotifyPropertyChanged("BtnExeVis");
+            }
+        }
+
+        private bool _btnMapVis = false;
+        public bool BtnMapVis
+        {
+            get { return _btnMapVis; }
+            set
+            {
+                SetProperty(ref _btnMapVis, value, () => BtnMapVis);
+                NotifyPropertyChanged("BtnMapVis");
             }
         }
 
@@ -792,13 +923,13 @@ namespace SapHanaAddIn
             }
             if (this.ItemCollection.Count == 0)
             {
-                //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("There were no HANA connections found.  Please add connections by going to Pro's backstage, then Options, then Hana Properties.");
+                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("There were no HANA connections found.  Please add connections by going to Pro's backstage, then Options, then Hana Properties.");
             }
         }
         public void OpenConnForEnv()
         {
-            //try
-            //{
+            try
+            {
                 //FrameworkApplication.State.Activate("condition_state_hasProps");
 
                 //if (cboEnv.cboBox.SelectedItem == null)
@@ -831,46 +962,48 @@ namespace SapHanaAddIn
                 Globals.hanaConn.Open();
 
                 IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
-
                 if (wrapper != null)
                 {
-                    wrapper.Caption = "Connected";
+                    wrapper.Caption = "   Connected to " + txtitm;
                 }
                 IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
                 if (wrapper2 != null)
                 {
-                    wrapper2.Caption = "Connected to " + txtitm;
+                    wrapper2.Caption = "   Connected to " + txtitm;
                 }
                 IPlugInWrapper wrapper3 = FrameworkApplication.GetPlugInWrapper("lblHasConnTrue");
                 if (wrapper3 != null)
                 {
-                    wrapper3.Caption = "Connected to " + txtitm;
+                    wrapper3.Caption = "   Connected to " + txtitm;
                     wrapper3.Checked = false;
                 }
-            //}
-            //catch (Exception ex)
-            //{
-            //    FrameworkApplication.State.Deactivate("condition_state_isconnected");
 
-            //    IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
-            //    if (wrapper != null)
-            //    {
-            //        wrapper.Caption = "Not Connected";
-            //    }
-            //    IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
-            //    if (wrapper2 != null)
-            //    {
-            //        wrapper2.Caption = "Not Connected";
-            //    }
-            //    IPlugInWrapper wrapper3 = FrameworkApplication.GetPlugInWrapper("lblHasConnTrue");
-            //    if (wrapper3 != null)
-            //    {
-            //        wrapper3.Caption = "Not Connected";
-            //        wrapper3.Checked = false;
-            //    }
-                
-            //    //ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("Error in OnSelectionChanged. " + ex.Message);
-            //}
+                FrameworkApplication.State.Activate("condition_state_isconnected");
+
+            }
+            catch (Exception ex)
+            {
+                FrameworkApplication.State.Deactivate("condition_state_isconnected");
+
+                IPlugInWrapper wrapper = FrameworkApplication.GetPlugInWrapper("lblHasConn");
+                if (wrapper != null)
+                {
+                    wrapper.Caption = "   Not Connected";
+                }
+                IPlugInWrapper wrapper2 = FrameworkApplication.GetPlugInWrapper("btnConnect");
+                if (wrapper2 != null)
+                {
+                    wrapper2.Caption = "   Not Connected";
+                }
+                IPlugInWrapper wrapper3 = FrameworkApplication.GetPlugInWrapper("lblHasConnTrue");
+                if (wrapper3 != null)
+                {
+                    wrapper3.Caption = "   Not Connected";
+                    wrapper3.Checked = false;
+                }
+
+                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("A connection could not be made to the chosen environment. " + ex.Message.ToString() + "Please check database connection parameters." );
+            }
         }
 
         protected override async void OnSelectionChange(ArcGIS.Desktop.Framework.Contracts.ComboBoxItem item)
@@ -879,7 +1012,6 @@ namespace SapHanaAddIn
             {
                 OpenConnForEnv();
 
-                FrameworkApplication.State.Activate("condition_state_isconnected");
             });
         }
         protected override async void OnDropDownOpened()

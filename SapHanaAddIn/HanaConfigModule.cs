@@ -10,6 +10,7 @@ using System.IO;
 using System.Security;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Core.Events;
+using ArcGIS.Desktop.Framework.Dialogs;
 
 namespace SapHanaAddIn
 {
@@ -34,8 +35,6 @@ namespace SapHanaAddIn
             {
                 _moduleSettings.Clear();
             }
-            FrameworkApplication.State.Deactivate("condition_state_isconnected");
-            FrameworkApplication.State.Deactivate("condition_state_hasResult");
 
             //get dsn settings from the local odbc settings and use those for the connectionitems
             //List<string> enumdsn = EnumDsn(); 
@@ -182,99 +181,109 @@ namespace SapHanaAddIn
         private bool hasSettings = false;
         protected override Task OnReadSettingsAsync(ModuleSettingsReader settings)
         {
-
-            // set the flag
-            hasSettings = true;
-            // clear existing setting values
-            _moduleSettings.Clear();
-
-            if (settings == null) return Task.FromResult(0);
-
-            // Settings defined in the Property sheet’s viewmodel.	
-            string[] keys = new string[] { "Setting1", "Setting2", "Setting3" };
-
-            foreach (string key in keys)
+            try
             {
-                object value = settings.Get(key);
-                if (value != null)
+
+                // set the flag
+                hasSettings = true;
+                // clear existing setting values
+                _moduleSettings.Clear();
+
+                if (settings == null) return Task.FromResult(0);
+
+                // Settings defined in the Property sheet’s viewmodel.	
+                string[] keys = new string[] { "Setting1", "Setting2", "Setting3" };
+
+                foreach (string key in keys)
                 {
-                    if (_moduleSettings.ContainsKey(key))
-                        _moduleSettings[key] = value.ToString();
-                    else
-                        _moduleSettings.Add(key, value.ToString());
-                }
-            }
-            if (_moduleSettings["Setting3"] != "")
-            {
-                string len;
-                _moduleSettings.TryGetValue("Setting3", out len);
-                string contentPath = System.IO.Path.Combine(Project.Current.HomeFolderPath, "Data.dat");
-                string projectPath = Project.Current.HomeFolderPath;
-                using (FileStream fStream = new FileStream(contentPath, FileMode.Open))
-                {
-                    if (fStream.CanRead)
+                    object value = settings.Get(key);
+                    if (value != null)
                     {
-                        byte[] inBuffer = new byte[int.Parse(len)];
-                        byte[] outBuffer;
-                        string pass = "";
-                        fStream.Read(inBuffer, 0, int.Parse(len));
-                        byte[] entropy = new byte[20];
-                        outBuffer = ProtectedData.Unprotect(inBuffer, null, DataProtectionScope.CurrentUser);
-                        pass = UnicodeEncoding.ASCII.GetString(outBuffer);
-
-                        string[] conns = pass.TrimStart(';').Split(';');
-                        foreach (string con in conns)
-                        {
-                            ConnectionItem coni = new SapHanaAddIn.ConnectionItem();
-                            string[] cells = con.Split(',');
-                            for (int i = 0; i < cells.Length; i++)
-                            {
-                                switch (i)
-                                {
-                                    case 0:
-                                        coni.name = cells[i];
-                                        break;
-                                    case 1:
-                                        coni.server= cells[i];
-                                        break;
-                                    case 2:
-                                        coni.userid= cells[i];
-                                        break;
-                                    case 3:
-                                        SecureString ss = new SecureString();
-                                        foreach (char cc  in cells[i])
-                                        {
-                                            ss.AppendChar(cc);
-                                        }
-                                        coni.pass = ss;
-                                        break;
-                                    default:
-
-                                        break;
-                                }
-                            }
-                            ConnectionItems.Add(coni);
-
-                        }
-                        foreach (char cc in pass)
-                        {
-                            _Hpass.AppendChar(cc);
-                        }
-                        
+                        if (_moduleSettings.ContainsKey(key))
+                            _moduleSettings[key] = value.ToString();
+                        else
+                            _moduleSettings.Add(key, value.ToString());
                     }
                 }
-            }
+                if (_moduleSettings["Setting3"] != "")
+                {
+                    string len;
+                    _moduleSettings.TryGetValue("Setting3", out len);
+                    string contentPath = System.IO.Path.Combine(Project.Current.HomeFolderPath, "Data.dat");
+                    string projectPath = Project.Current.HomeFolderPath;
+                    using (FileStream fStream = new FileStream(contentPath, FileMode.Open))
+                    {
+                        if (fStream.CanRead)
+                        {
+                            byte[] inBuffer = new byte[int.Parse(len)];
+                            byte[] outBuffer;
+                            string pass = "";
+                            fStream.Read(inBuffer, 0, int.Parse(len));
+                            byte[] entropy = new byte[20];
+                            outBuffer = ProtectedData.Unprotect(inBuffer, null, DataProtectionScope.CurrentUser);
+                            pass = UnicodeEncoding.ASCII.GetString(outBuffer);
 
+                            string[] conns = pass.TrimStart(';').Split(';');
+                            foreach (string con in conns)
+                            {
+                                ConnectionItem coni = new SapHanaAddIn.ConnectionItem();
+                                string[] cells = con.Split(',');
+                                for (int i = 0; i < cells.Length; i++)
+                                {
+                                    switch (i)
+                                    {
+                                        case 0:
+                                            coni.name = cells[i];
+                                            break;
+                                        case 1:
+                                            coni.server = cells[i];
+                                            break;
+                                        case 2:
+                                            coni.userid = cells[i];
+                                            break;
+                                        case 3:
+                                            SecureString ss = new SecureString();
+                                            foreach (char cc in cells[i])
+                                            {
+                                                ss.AppendChar(cc);
+                                            }
+                                            coni.pass = ss;
+                                            break;
+                                        default:
+
+                                            break;
+                                    }
+                                }
+                                ConnectionItems.Add(coni);
+
+                            }
+                            foreach (char cc in pass)
+                            {
+                                _Hpass.AppendChar(cc);
+                            }
+
+                        }
+                    }
+
+                }
+
+            }
+            catch(Exception ex)
+            { MessageBox.Show("Error in OnReadSettingsAsync:  " + ex.Message.ToString(), "Error"); }
+            
 
             return Task.FromResult(0);
         }
        
         protected override Task   OnWriteSettingsAsync(ModuleSettingsWriter settings)
         {
-            if (ConnectionItems.Count > 0)
+
+            try
             {
-                try
+
+                if (ConnectionItems.Count > 0)
                 {
+
                     string fullString = ""; //= String.Join<ConnectionItem>(String.Empty, ConnectionItems.ToArray());
                     foreach (ConnectionItem item in ConnectionItems)
                     {
@@ -317,66 +326,70 @@ namespace SapHanaAddIn
                     }
                     //settings.Add(key, UnicodeEncoding.ASCII.GetString(ciphertext,0,ciphertext.Length));
 
-                    
-                }
-                catch (Exception sss)
-                {
-                    string ss = sss.Message;
-                    throw;
-                }
-            }
-            foreach (string key in _moduleSettings.Keys)
-            {
-                if (key=="Setting3")
-                {
-                    //try
-                    //{
-                    //    string fullString = ""; //= String.Join<ConnectionItem>(String.Empty, ConnectionItems.ToArray());
-                    //    foreach (ConnectionItem item in ConnectionItems)
-                    //    {
-                    //        string tst2 = new System.Net.NetworkCredential(string.Empty, item.pass).Password;
-                    //        string[] ss = { item.name,item.server,item.userid, tst2 };
-                    //        fullString = fullString + ";" + string.Join(",",ss);
-                    //    }
 
-                    //    string tst = new System.Net.NetworkCredential(string.Empty, _Hpass).Password;
-                    //    byte[] plaintxt = UnicodeEncoding.ASCII.GetBytes(fullString);
-                    //    //string password = new System.Net.NetworkCredential(string.Empty, _Hpass).Password;
-                    //    byte[] entropy = new byte[20];
-                    //    using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
-                    //    {
-                    //        rng.GetBytes(entropy);
-                    //    }
-                    //    string contentPath = System.IO.Path.Combine(Project.Current.HomeFolderPath, "Data.dat");
-                    //    byte[] ciphertext = System.Security.Cryptography.ProtectedData.Protect(plaintxt, null, DataProtectionScope.CurrentUser);
-                    //    FileStream fStream = new FileStream(contentPath, FileMode.OpenOrCreate);
-                    //    string encryt = UnicodeEncoding.ASCII.GetString(ciphertext, 0, ciphertext.Length);
-                    //    // Write the encrypted data to a stream.
-                    //    if (fStream.CanWrite && ciphertext != null)
-                    //    {
-                    //        fStream.Write(ciphertext, 0, ciphertext.Length);
-                    //        settings.Add(key, ciphertext.Length.ToString());
-                    //        //length = ciphertext.Length;
-                    //        fStream.Close();
-                    //    }
-                    //    //settings.Add(key, UnicodeEncoding.ASCII.GetString(ciphertext,0,ciphertext.Length));
 
-                    //    settings.Add(key, ciphertext.Length.ToString());
-                    //}
-                    //catch (Exception sss)
-                    //{
-                    //    string ss =sss.Message;
-                    //    throw;
-                    //}
-                    
                 }
-                else
+                foreach (string key in _moduleSettings.Keys)
                 {
-                    settings.Add(key, _moduleSettings[key]);
+                    if (key == "Setting3")
+                    {
+                        //try
+                        //{
+                        //    string fullString = ""; //= String.Join<ConnectionItem>(String.Empty, ConnectionItems.ToArray());
+                        //    foreach (ConnectionItem item in ConnectionItems)
+                        //    {
+                        //        string tst2 = new System.Net.NetworkCredential(string.Empty, item.pass).Password;
+                        //        string[] ss = { item.name,item.server,item.userid, tst2 };
+                        //        fullString = fullString + ";" + string.Join(",",ss);
+                        //    }
+
+                        //    string tst = new System.Net.NetworkCredential(string.Empty, _Hpass).Password;
+                        //    byte[] plaintxt = UnicodeEncoding.ASCII.GetBytes(fullString);
+                        //    //string password = new System.Net.NetworkCredential(string.Empty, _Hpass).Password;
+                        //    byte[] entropy = new byte[20];
+                        //    using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+                        //    {
+                        //        rng.GetBytes(entropy);
+                        //    }
+                        //    string contentPath = System.IO.Path.Combine(Project.Current.HomeFolderPath, "Data.dat");
+                        //    byte[] ciphertext = System.Security.Cryptography.ProtectedData.Protect(plaintxt, null, DataProtectionScope.CurrentUser);
+                        //    FileStream fStream = new FileStream(contentPath, FileMode.OpenOrCreate);
+                        //    string encryt = UnicodeEncoding.ASCII.GetString(ciphertext, 0, ciphertext.Length);
+                        //    // Write the encrypted data to a stream.
+                        //    if (fStream.CanWrite && ciphertext != null)
+                        //    {
+                        //        fStream.Write(ciphertext, 0, ciphertext.Length);
+                        //        settings.Add(key, ciphertext.Length.ToString());
+                        //        //length = ciphertext.Length;
+                        //        fStream.Close();
+                        //    }
+                        //    //settings.Add(key, UnicodeEncoding.ASCII.GetString(ciphertext,0,ciphertext.Length));
+
+                        //    settings.Add(key, ciphertext.Length.ToString());
+                        //}
+                        //catch (Exception sss)
+                        //{
+                        //    string ss =sss.Message;
+                        //    throw;
+                        //}
+
+                    }
+                    else
+                    {
+                        settings.Add(key, _moduleSettings[key]);
+                    }
+
                 }
-                
+
+
             }
+            catch(Exception ex)
+            {MessageBox.Show("Error in OnReadSettingsAsync:  " + ex.Message.ToString(), "Error"); }
+
             return Task.FromResult(0);
+
+
+
 
         }
 

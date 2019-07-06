@@ -52,7 +52,7 @@
             </DockPanel>
 
             <Button x:Name="btnExecute" HorizontalAlignment="Right" Style="{DynamicResource Esri_Button}"
-                        Content="Execute SQL" Click="btnExecute_Click"></Button>
+                         Content="Execute SQL" Click="btnExecute_Click" IsEnabled="{Binding BtnExeVis}"></Button>
             
             <TextBlock Text="{Binding Heading2}" Margin="3,3,5,3" Style="{DynamicResource Esri_TextBlockDockPaneHeader}">
             </TextBlock>
@@ -79,7 +79,7 @@
             </Grid>
           
                     <Button Name="btnAddTOC" Content="Add to Map"  HorizontalAlignment="Right" Click="btnAddTOC_Click"
-                            Style="{DynamicResource Esri_Button}">
+                            Style="{DynamicResource Esri_Button}" IsEnabled="{Binding BtnMapVis}">
             </Button>
 
             <DockPanel>

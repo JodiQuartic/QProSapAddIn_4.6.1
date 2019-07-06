@@ -35,9 +35,10 @@ namespace SapHanaAddIn
             //  We have declared the view model instance declaratively in the xaml.
             //  Get the reference to it here, so we can use it in the button click event.
             TableViewerPanelViewModel _tableviewerpanelViewModel = (TableViewerPanelViewModel)base.DataContext;
+
         }
 
-        
+
 
         private void btnExecute_Click(object sender, RoutedEventArgs e)
         {
