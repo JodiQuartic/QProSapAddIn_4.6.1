@@ -1,12 +1,12 @@
 ﻿<ArcGIS defaultAssembly="SapHanaAddIn.dll" defaultNamespace="SapHanaAddIn" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
   <AddInInfo id="{9981ecfc-db03-4ff9-9f1f-19c092cfecc7}" version="1.0" desktopVersion="2.3.15769">
     <Name>SapHanaAddIn</Name>
-    <Description>An Esri ArcGIS® Pro Add-In for connecting to, exploring and publishing SAP data</Description>
-    <Image>Images\AddinDesktop32.png</Image>
+    <Description>An Esri ArcGIS® Pro Add-In for connecting, exploring and publishing SAP data</Description>
+    <Image>Images\qpro-rgb-saponly.png</Image>
     <Author>Quartic Solutions</Author>
     <Company>Quartic Solutions</Company>
     <Date>6/21/2018 7:46:04 PM, 2018</Date>
-    <Subject>Framework</Subject>
+    <Subject>SAP Esri Integration</Subject>
     <!-- Note subject can be one or more of these topics:
                     Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
   </AddInInfo>

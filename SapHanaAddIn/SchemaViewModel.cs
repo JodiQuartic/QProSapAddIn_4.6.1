@@ -48,34 +48,6 @@ namespace SapHanaAddIn
         }
             #endregion
 
-            //public async Task RefreshSchemas()
-            //{
-            //    await QueuedTask.Run(() =>
-            //    {
-            //        HanaCommand cmd = new HanaCommand("select TOP 1000 * from schemas", Globals.hanaConn);
-            //        HanaDataReader dr = cmd.ExecuteReader();
-            //        while (dr.Read())
-            //        {
-            //            _schemas.Add(dr.GetString(0));
-            //        }
-            //        dr.Close();
-
-            //        //    HanaCommand cmd = new HanaCommand("select TOP 1000 * from schemas", Globals.hanaConn);
-            //        //    HanaDataReader dr = cmd.ExecuteReader();
-            //        //    ObservableCollection<string> temp = new ObservableCollection<String>();
-            //        //    while (dr.Read())
-            //        //    {
-            //        //        temp.Add(dr.GetString(0));
-            //        //    }
-            //        //    dr.Close();
-
-            //        //    lock (_schemasLock)
-            //        //    {
-            //        //        Schemas = temp;
-            //        //    }
-            //    });
-            //}
-
             #region Commands
             void UpdateSchemaNameExecute()
             {

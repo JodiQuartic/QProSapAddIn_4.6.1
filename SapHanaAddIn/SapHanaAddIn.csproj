@@ -153,6 +153,8 @@
     <Resource Include="DarkImages\App.ico" />
   </ItemGroup>
   <ItemGroup>
+    <AddInContent Include="Images\qpro-rgb-icononly.png" />
+    <AddInContent Include="Images\qpro-rgb-saponly.png" />
     <Resource Include="Images\bug_yellow_edit.png" />
     <AddInContent Include="Images\data_find.png" />
     <AddInContent Include="Images\data_gear.png" />

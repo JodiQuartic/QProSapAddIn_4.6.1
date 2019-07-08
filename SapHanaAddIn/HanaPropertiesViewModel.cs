@@ -7,6 +7,7 @@ using ArcGIS.Desktop.Framework.Contracts;
 using System.Security;
 using System.IO;
 using System.Security.Cryptography;
+using ArcGIS.Desktop.Framework.Dialogs;
 
 namespace SapHanaAddIn
 {
@@ -39,29 +40,38 @@ namespace SapHanaAddIn
         /// <remarks>This function is only called if the page has set its IsModified flag to true.</remarks>
         protected override Task CommitAsync()
         {
-            if (IsDirty())
+            try
             {
-                // store the new settings in the dictionary ... save happens in OnProjectSave
-                Dictionary<string, string> settings = HanaConfigModule.Current.Settings;
+                if (IsDirty())
+                {
+                    // store the new settings in the dictionary ... save happens in OnProjectSave
+                    Dictionary<string, string> settings = HanaConfigModule.Current.Settings;
 
-                if (settings.ContainsKey("Setting1"))
-                    settings["Setting1"] = ModuleSetting1.ToString();
-                else
-                    settings.Add("Setting1", ModuleSetting1.ToString());
+                    if (settings.ContainsKey("Setting1"))
+                        settings["Setting1"] = ModuleSetting1.ToString();
+                    else
+                        settings.Add("Setting1", ModuleSetting1.ToString());
 
-                if (settings.ContainsKey("Setting2"))
-                    settings["Setting2"] = ModuleSetting2;
-                else
-                    settings.Add("Setting2", ModuleSetting2);
+                    if (settings.ContainsKey("Setting2"))
+                        settings["Setting2"] = ModuleSetting2;
+                    else
+                        settings.Add("Setting2", ModuleSetting2);
 
-                if (settings.ContainsKey("Setting3"))
-                    settings["Setting3"] = ModuleSetting3;
-                else
-                    settings.Add("Setting3", ModuleSetting3);
-                // set the project dirty
-                Project.Current.SetDirty(true);
+                    if (settings.ContainsKey("Setting3"))
+                        settings["Setting3"] = ModuleSetting3;
+                    else
+                        settings.Add("Setting3", ModuleSetting3);
+                    // set the project dirty
+                    Project.Current.SetDirty(true);
+                }
+                return Task.FromResult(0);
+
             }
-            return Task.FromResult(0);
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error  :  " + ex.Message.ToString() + " ");
+                return null;
+            }
         }
 
 
@@ -120,73 +130,76 @@ namespace SapHanaAddIn
         /// <returns>A task that represents the work queued to execute in the ThreadPool.</returns>
         protected override Task InitializeAsync()
         {
-
-            List<ConnectionItem> conitem = HanaConfigModule.Current.ConnectionItems;
-            Connections = conitem;
-            Dictionary<string, string> settings = HanaConfigModule.Current.Settings;
-
-            // assign to the values biniding to the controls
-            if (settings.ContainsKey("Setting1"))
-                ModuleSetting1 = settings["Setting1"];
-            else
-                ModuleSetting1 = "";
-
-            if (settings.ContainsKey("Setting2"))
-                ModuleSetting2 = settings["Setting2"];
-            else
-                ModuleSetting2 = "";
-
-            if (settings.ContainsKey("Setting3"))
-                ModuleSetting3 = settings["Setting3"];
-            else
-                ModuleSetting3 = "";
-            // keep track of the original values (used for comparison when saving)
-            _origModuleSetting1 = ModuleSetting1;
-            _origModuleSetting2 = ModuleSetting2;
-            _origModuleSetting3 = ModuleSetting3;
-            string len = ModuleSetting3;
-            if (len != "")
+            try
             {
-                byte[] inBuffer = new byte[int.Parse(len)];
-                byte[] outBuffer;
-                string pass = "";
-                
-                string contentPath = System.IO.Path.Combine(Project.Current.HomeFolderPath,  "Data.dat");
-                using (FileStream fStream = new FileStream(contentPath, FileMode.Open))
+                List<ConnectionItem> conitem = HanaConfigModule.Current.ConnectionItems;
+                Connections = conitem;
+                Dictionary<string, string> settings = HanaConfigModule.Current.Settings;
+
+                // assign to the values biniding to the controls
+                if (settings.ContainsKey("Setting1"))
+                    ModuleSetting1 = settings["Setting1"];
+                else
+                    ModuleSetting1 = "";
+
+                if (settings.ContainsKey("Setting2"))
+                    ModuleSetting2 = settings["Setting2"];
+                else
+                    ModuleSetting2 = "";
+
+                if (settings.ContainsKey("Setting3"))
+                    ModuleSetting3 = settings["Setting3"];
+                else
+                    ModuleSetting3 = "";
+                // keep track of the original values (used for comparison when saving)
+                _origModuleSetting1 = ModuleSetting1;
+                _origModuleSetting2 = ModuleSetting2;
+                _origModuleSetting3 = ModuleSetting3;
+                string len = ModuleSetting3;
+                if (len != "")
                 {
-                    if (fStream.CanRead)
+                    byte[] inBuffer = new byte[int.Parse(len)];
+                    byte[] outBuffer;
+                    string pass = "";
+
+                    string contentPath = System.IO.Path.Combine(Project.Current.HomeFolderPath, "Data.dat");
+                    using (FileStream fStream = new FileStream(contentPath, FileMode.Open))
                     {
-                        fStream.Read(inBuffer, 0, int.Parse(len));
-                        byte[] entropy = new byte[20];
-                        try
+                        if (fStream.CanRead)
                         {
-                            outBuffer = ProtectedData.Unprotect(inBuffer, null, DataProtectionScope.CurrentUser);
-                            pass = UnicodeEncoding.ASCII.GetString(outBuffer);
-                        }
-                        catch (Exception)
-                        {
-                            pass = "";
-                            outBuffer = null;
-                            SecurePassword = new SecureString();
-                            System.Windows.MessageBox.Show("Could not get a stored password for HANA \r\n Please set it in Project Settings << HANA Options");
-                            return Task.FromResult(0); ;
-                        }
-                        
-                    }
-                }
-                SecurePassword = new SecureString();
-                foreach (char cc in pass)
-                {
-                    SecurePassword.AppendChar(cc);
-                }
-                pass = "";
-                outBuffer = null;
-            }
-            else
-            {
-                SecurePassword = new SecureString();
-            }
+                            fStream.Read(inBuffer, 0, int.Parse(len));
+                            byte[] entropy = new byte[20];
+                            try
+                            {
+                                outBuffer = ProtectedData.Unprotect(inBuffer, null, DataProtectionScope.CurrentUser);
+                                pass = UnicodeEncoding.ASCII.GetString(outBuffer);
+                            }
+                            catch (Exception)
+                            {
+                                pass = "";
+                                outBuffer = null;
+                                SecurePassword = new SecureString();
+                                System.Windows.MessageBox.Show("Could not get a stored password for HANA \r\n Please set it in Project Settings << HANA Options");
+                                return Task.FromResult(0); ;
+                            }
 
+                        }
+                    }
+                    SecurePassword = new SecureString();
+                    foreach (char cc in pass)
+                    {
+                        SecurePassword.AppendChar(cc);
+                    }
+                    pass = "";
+                    outBuffer = null;
+                }
+                else
+                {
+                    SecurePassword = new SecureString();
+                }
+            }
+            catch (Exception ex)
+            { MessageBox.Show("Error  :  " + ex.Message.ToString() + " "); }
 
             return Task.FromResult(0);
         }

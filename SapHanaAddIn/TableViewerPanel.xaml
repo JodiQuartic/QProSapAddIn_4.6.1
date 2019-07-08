@@ -44,7 +44,7 @@
                 <TextBox Name="txtQueryText" TextWrapping="Wrap"  Height="60" Width="auto"  
                      Background="{DynamicResource Esri_BackgroundPressedBrush}" 
                      Foreground="{DynamicResource Esri_TextStyleDefaultBrush}" 
-                     Text="{Binding QueryTxt.SelectString, Mode=OneWay}"                               
+                     Text="{Binding QueryTxt.SelectString}"                               
                          VerticalScrollBarVisibility="Visible" >
 
                 </TextBox>
@@ -66,7 +66,7 @@
                               HeadersVisibility="Column"
                               HorizontalScrollBarVisibility="Visible"
                               VerticalScrollBarVisibility="Visible"
-                              ColumnWidth="SizeToCells" 
+                              ColumnWidth="SizeToHeader" 
                               Grid.Row="0"
                               ItemsSource="{Binding Results}"
                                >

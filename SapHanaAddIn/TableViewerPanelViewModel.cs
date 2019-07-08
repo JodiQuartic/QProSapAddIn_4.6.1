@@ -37,8 +37,20 @@ namespace SapHanaAddIn
                 return;
             }
             else
-            {              
-                pane.Activate();
+            {
+                string dateInString = "07.01.2019";
+
+                DateTime startDate = DateTime.Parse(dateInString);
+                DateTime expiryDate = startDate.AddDays(29);
+                if (DateTime.Now > expiryDate)
+                {
+                    MessageBox.Show("This Trial has expired.  Thank you for trying Q Pro for SAP. " + Environment.NewLine + Environment.NewLine + "We would appreciate any feedback you may have.  Please report bugs and/or enhancements to admin@quarticsolutions.com ." + Environment.NewLine + Environment.NewLine + "You can uninstall this addin by using ArcGIS Pro's AddIn Manager."  + Environment.NewLine + Environment.NewLine + "If you are interested in purchasing Q Pro for SAP please contact Quartic Solutions at info@quarticsolutions.com or visit our website www.quarticsolutions.com");
+                }
+                else
+                {
+                    pane.Activate();
+                }
+               
             }
         }
 
@@ -71,6 +83,17 @@ namespace SapHanaAddIn
                     //_btnExeVis = false;
                     //_btnMapVis = false;
 
+                    if (Globals.hanaConn.State != ConnectionState.Open)
+                        Globals.hanaConn.Open();
+                    if (Globals.hanaConn == null || Globals.hanaConn.State != ConnectionState.Open)
+                    {
+                        MessageBox.Show("There is no open database connection. Please connect to database first. ");
+                        lock (_aLock)
+                        {
+                            BtnMapVis = false;
+                        }
+                        return;
+                    }
                     HanaCommand cmd = new HanaCommand("select TOP 1000 * from schemas", Globals.hanaConn);
                     HanaDataReader dr = cmd.ExecuteReader();
                     ObservableCollection<string> temp = new ObservableCollection<string>();
@@ -80,13 +103,16 @@ namespace SapHanaAddIn
                         temp.Add(ss.SchemaName);
                     }
                     dr.Close();
+                    if (Globals.hanaConn.State != ConnectionState.Closed)
+                        Globals.hanaConn.Close();
+
                     lock (_aLock)
                     {
                         SchemaColl = temp;
                     }
                     lock (_aLock)
                     {
-                       BtnExeVis=false;
+                       BtnExeVis=true;
                     }
                     lock (_aLock)
                     {
@@ -129,6 +155,17 @@ namespace SapHanaAddIn
                         BtnMapVis = false;
                     }
 
+                    if (Globals.hanaConn.State != ConnectionState.Open)
+                        Globals.hanaConn.Open();
+                    if (Globals.hanaConn == null || Globals.hanaConn.State != ConnectionState.Open)
+                    {
+                        MessageBox.Show("There is no open database connection. Please connect to database first. ");
+                        lock (_aLock)
+                        {
+                            BtnMapVis = false;
+                        }
+                        return;
+                    }
                     HanaCommand cmd = new HanaCommand("SELECT TOP 1000 table_name FROM sys.tables where schema_name = '" + _currentSchema + "'", Globals.hanaConn);
                     HanaDataReader dr = cmd.ExecuteReader();
                     ObservableCollection<string> temp = new ObservableCollection<string>();
@@ -137,9 +174,17 @@ namespace SapHanaAddIn
                         temp.Add(dr.GetString(0));
                     }
                     dr.Close();
+                    if (Globals.hanaConn.State != ConnectionState.Closed)
+                        Globals.hanaConn.Close();
 
                     if (temp.Count==0)
-                    { MessageBox.Show("There are no tables in the selected schema."); }
+                    { MessageBox.Show("There are no tables in the selected schema.");
+                        lock (_aLock)
+                        {
+                            Tables.Clear();
+                            
+                        }
+                    }
                     else
                     {
                         lock (_aLock)
@@ -174,6 +219,17 @@ namespace SapHanaAddIn
                 }
 
                 //get field names
+                if (Globals.hanaConn.State != ConnectionState.Open)
+                    Globals.hanaConn.Open();
+                if (Globals.hanaConn == null || Globals.hanaConn.State != ConnectionState.Open)
+                {
+                    MessageBox.Show("There is no open database connection. Please connect to database first. ");
+                    lock (_aLock)
+                    {
+                        BtnMapVis = false;
+                    }
+                    return;
+                }
                 HanaCommand cmd = new HanaCommand("select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "'", Globals.hanaConn);
                 HanaDataReader dr = cmd.ExecuteReader();
                 List<string> colls = new List<string>();
@@ -193,44 +249,48 @@ namespace SapHanaAddIn
                 //set default querytext string for the UI txt box 
                 _querytext.SelectString = "SELECT TOP 1000 " + string.Join(", ", colls.ToArray()) + " FROM \"" + _currentSchema + "\".\"" + _currentTable + "\"";
 
-                ////find spatial column
-                //SpatialCol.SelectString = "";
-                //cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "' and data_type_id = 29812";
-                //dr = cmd.ExecuteReader();
-                //if (dr.HasRows)
-                //{
-                //    while (dr.Read())
-                //    {
-                //        _spatialCol.SelectString = dr.GetString(0);
-                //    }
-                //}
-                //else
-                //{
-                //    _spatialCol.SelectString = "none";
-                //}
-                //dr.Close();
+                //find spatial column
+                SpatialCol.SelectString = "";
+                cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "' and data_type_id = 29812";
+                dr = cmd.ExecuteReader();
+                if (dr.HasRows)
+                {
+                    while (dr.Read())
+                    {
+                        _spatialCol.SelectString = dr.GetString(0);
+                    }
+                }
+                else
+                {
+                    _spatialCol.SelectString = "none";
+                }
+                dr.Close();
 
-                ////find objectid
-                //ObjidCol.SelectString = "";
-                //cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "' and COLUMN_NAME = 'OBJECTID'";
-                //dr = cmd.ExecuteReader();
-                //if (dr.HasRows)
-                //{
-                //    while (dr.Read())
-                //    {
-                //        _objidCol.SelectString = dr.GetString(0);
-                //    }
-                //}
-                //else
-                //{
-                //    _objidCol.SelectString = "none";
-                //}
-                //dr.Close();
+                //find objectid
+                ObjidCol.SelectString = "";
+                cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "' and COLUMN_NAME = 'OBJECTID'";
+                dr = cmd.ExecuteReader();
+                if (dr.HasRows)
+                {
+                    while (dr.Read())
+                    {
+                        _objidCol.SelectString = dr.GetString(0);
+                    }
+                }
+                else
+                {
+                    _objidCol.SelectString = "none";
+                }
+                dr.Close();
 
                 lock (_aLock)
                 {
                     BtnExeVis = true;
                 }
+
+                if (Globals.hanaConn.State != ConnectionState.Closed)
+                    Globals.hanaConn.Close();
+
             });
             }
             catch (Exception ex)
@@ -247,28 +307,12 @@ namespace SapHanaAddIn
             try { 
             await QueuedTask.Run(() =>
             {
-                //check for valid connection
-                if (Globals.hanaConn == null || Globals.hanaConn.State != ConnectionState.Open)
-                {
-                   MessageBox.Show("Connect to a database first.", "Not connected");
-                    lock (_aLock)
-                    {
-                        BtnMapVis = false;
-                    }
-
-                    return;
-                }
-
                 //string txtSQLStatement = txtQueryText.Text;
                 string ts = _querytext.SelectString;
 
                 if (ts.Trim().Length < 10)
                 {
-                    MessageBox.Show("Please enter complete command text.", "Empty command text");
-                    lock (_aLock)
-                    {
-                        BtnExeVis = false;
-                    }
+                    MessageBox.Show("Please enter complete command text.  ", "Empty command text");
                     lock (_aLock)
                     {
                         BtnMapVis = false;
@@ -287,6 +331,17 @@ namespace SapHanaAddIn
                     qtest = ts;
                 }
 
+                if (Globals.hanaConn.State != ConnectionState.Open)
+                    Globals.hanaConn.Open();
+                if (Globals.hanaConn == null || Globals.hanaConn.State != ConnectionState.Open)
+                {
+                    MessageBox.Show("There is no open database connection. Please connect to database first. ");
+                    lock (_aLock)
+                    {
+                        BtnMapVis = false;
+                    }
+                    return;
+                }
                 HanaCommand cmd = new HanaCommand(qtest, Globals.hanaConn);
                 HanaDataReader dr = null;
                 dr = cmd.ExecuteReader();
@@ -296,16 +351,17 @@ namespace SapHanaAddIn
                     dt.Load(dr);
                 }
                 dr.Close();
+                if (Globals.hanaConn.State != ConnectionState.Closed)
+                    Globals.hanaConn.Close();
 
                 ActRecCount.SelectString = dt.DefaultView.Count.ToString();
-
                 if (_actrecCount.SelectString=="0")
                 {
                     _actrecCount.SelectString = "";
                     _objidCol.SelectString = "";
                     _spatialCol.SelectString = "";
                     _strMessage.SelectString = "No Rows.";
-                    MessageBox.Show("There are no rows in the selected table.");
+                    MessageBox.Show("There are no rows in the selected table. ");
 
                     lock (_aLock)
                     {
@@ -332,11 +388,13 @@ namespace SapHanaAddIn
             }
             catch (Exception ex)
             {
-                MessageBox.Show("The sql statement was not able to execute.  " + ex.Message.ToString() + " Please review the sql statement." );
+                MessageBox.Show("The sql statement was not able to execute. " + ex.Message.ToString() + " Please review the sql statement." );
                 lock (_aLock)
                 {
                     BtnMapVis = false;
                 }
+                if (Globals.hanaConn.State != ConnectionState.Closed)
+                    Globals.hanaConn.Close();
             }
         }
         public async Task AddToTOCCallback(CancelableProgressorSource cpd)
@@ -345,286 +403,346 @@ namespace SapHanaAddIn
             {
                 await QueuedTask.Run(() =>
                 {
-                    
+
                     if (MapView.Active == null)
-                {
-                    _strMessage.SelectString = "No active map view.";
-                    cpd.Message = "There is no active map view.  Please select a map and try again.";
-                    return;
-                }
-
-
-
-                //===This is for reading the odbc data sources from the machine registery and is not currently being used.
-                //// Opening a Non-Versioned db instance.
-                //RegistryKey reg = (Registry.LocalMachine).OpenSubKey("Software");
-                //reg = reg.OpenSubKey("ODBC");
-                //reg = reg.OpenSubKey("ODBC.INI");
-                //reg = reg.OpenSubKey("ODBC Data Sources");
-                //string instance = "";
-                //foreach (string item in reg.GetValueNames())
-                //{
-                //    instance = item;
-                //    string vvv = reg.GetValue(item).ToString();
-                //}
-
-                //setup connection properties
-                ComboBoxItem item2 = (ComboBoxItem)cboEnv.cboBox.SelectedItem;
-                ConnectionItem connitem = item2.Icon as ConnectionItem;
-                string tst2 = new System.Net.NetworkCredential(string.Empty, connitem.pass).Password;
-                DatabaseConnectionProperties connectionProperties = new DatabaseConnectionProperties(EnterpriseDatabaseType.Hana)
-                {
-                    AuthenticationMode = AuthenticationMode.DBMS,
-                    Instance = cboEnv.cboBox.Text, //@"sapqe2hana",
-                    User = connitem.userid,
-                    Password = tst2,
-                    Version = "dbo.DEFAULT"
-                };
-
-                //==================had to break code up more with using statements cause kept having thread probs
-
-                //create table name for the layer
-                Random r = new Random();
-                int n = r.Next();
-                string s = n.ToString();
-                s = s.Substring(s.Length - 4);
-                string lyrname = _currentTable + "_" + s;
-
-                //get all the variables needed from qds first
-                string qtest = _querytext.SelectString.Trim();
-                string oflds = "";
-                IReadOnlyList<Field> lst;
-                string db_sc = SpatialCol.SelectString;
-                string esri_sc = "";
-                string db_oc = ObjidCol.SelectString;
-                string esri_oc = "";
-                GeometryType st = GeometryType.Unknown;
-                SpatialReference sr = null;
-                string sri = "";
-
-                using (Database db = new Database(connectionProperties))
-                {
-                    if (qtest.Length < 1)
                     {
-                        _strMessage.SelectString = "Empty Sql.";
-                            BtnExeVis = false;
-                            BtnMapVis = false;
-                            return;
+                        _strMessage.SelectString = "No active map view.";
+                        cpd.Message = "There is no active map view.  Please select a map and try again.";
+                        return;
                     }
-                    else
+
+                    //===This is for reading the odbc data sources from the machine registery and is not currently being used.
+                    //// Opening a Non-Versioned db instance.
+                    //RegistryKey reg = (Registry.LocalMachine).OpenSubKey("Software");
+                    //reg = reg.OpenSubKey("ODBC");
+                    //reg = reg.OpenSubKey("ODBC.INI");
+                    //reg = reg.OpenSubKey("ODBC Data Sources");
+                    //string instance = "";
+                    //foreach (string item in reg.GetValueNames())
+                    //{
+                    //    instance = item;
+                    //    string vvv = reg.GetValue(item).ToString();
+                    //}
+
+                    
+                    //==================had to break code up more with using statements cause kept having thread probs
+
+                    //create table name for the layer
+                    Random r = new Random();
+                    int n = r.Next();
+                    string s = n.ToString();
+                    s = s.Substring(s.Length - 4);
+                    string lyrname = _currentTable + "_" + s;
+
+                    //===========database values
+                    //find spatial column - need to refresh incase the user has overwritten or manually typed in sql
+                    if (Globals.hanaConn.State != ConnectionState.Open)
+                        Globals.hanaConn.Open();
+                    if (Globals.hanaConn == null || Globals.hanaConn.State != ConnectionState.Open)
                     {
-                        QueryDescription qds = db.GetQueryDescription(qtest, lyrname);
-                        lst = qds.GetFields();
-                        oflds = qds.GetObjectIDFields();
-                        esri_sc = qds.GetShapeColumnName();
-                        esri_oc = qds.GetObjectIDColumnName();
-                        st = qds.GetShapeType();
-                        sr = qds.GetSpatialReference();
-                        sri = qds.GetSRID();
-                    }
-                }
-
-                if (lst == null)   //table has no fields
-                    return;
-
-                //now do work with variables from qds
-                int objfieldcount = oflds.Split(',').Length - 1;
-                string objForSet = "";
-                bool hasObj = false;
-                string fakeObjSql = "";
-                bool hasShape = false;
-                //bool hasSlashes = false;
-
-                //==============determine field to use for objectid - pro requires a pk - can't assume the field name OBJECTID in HANA is a valid field type to use for objectid according to Esri...
-                if (objfieldcount == 0)
-                {
-                    _strMessage.SelectString = "Table missing key.";
-                    //does db think there is a pk?
-                    if (db_oc != null)
-                    {
-                        //trick esri into use this?
-                        //objForSet = db_oc;
-                        //hasObj = true;
-                        //ObjidCol.SelectString = db_oc;
-
-                        objForSet = "none";
-                        ObjidCol.SelectString = "default";
-                    }
-                    else
-                    {
-                        //last try to construct objectid as it is a required column in Pro
-                        //row_number() over(partition by " + tempid + ") as OBJECTID";))
-                        //string fakeObjCol = objidCol.Split('-')[1];
-                        if (lst != null && lst.Count > 0)
+                        MessageBox.Show("There is no open database connection. Please connect to database first. ");
+                        lock (_aLock)
                         {
-                            string oc = lst[0].Name;  //use this as a dummy field to put the partition statement in (as long as it is not named "OBJECTID" esri crashes)
+                            BtnMapVis = false;
+                        }
+                        return;
+                    }
+                    HanaCommand cmd = new HanaCommand("select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "' and data_type_id = 29812", Globals.hanaConn);
+                    HanaDataReader dr = cmd.ExecuteReader();
+                    SpatialCol.SelectString = "";
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                        {
+                            lock (_aLock)
+                            {
+                                _spatialCol.SelectString = dr.GetString(0);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        lock (_aLock)
+                        {
+                            _spatialCol.SelectString = "none";
+                        }
+                    }
+                    dr.Close();
 
-                            //if (esri_oc == "OBJECTID")
-                            //{
-                            //    //drop OBJECTID from field list
-                            //    qtest0 = qtest0.Replace("OBJECTID,", "");
-                            //}
-                            //else
-                            //{ }
-
-                            fakeObjSql = ", row_number()" + " over(partition by " + oc + ")" + " as QID ";
-                            objForSet = oc;
-                            ObjidCol.SelectString = "default";
-                            _strMessage.SelectString = "Attempted to create key.";
-                            cpd.Message = "This data does not have a key field to use for OBJECTID.  An attempt will be made to create one.";
+                    //find objectid
+                    ObjidCol.SelectString = "";
+                    cmd.CommandText = "select COLUMN_NAME from SYS.TABLE_COLUMNS where schema_name like '" + _currentSchema + "' and table_name = '" + _currentTable + "' and COLUMN_NAME = 'OBJECTID'";
+                    dr = cmd.ExecuteReader();
+                    if (dr.HasRows)
+                    {
+                        while (dr.Read())
+                            lock (_aLock)
+                            {
+                                _objidCol.SelectString = dr.GetString(0);
                             }
                     }
-                }
-                if (objfieldcount == 1)
-                {
-                    esri_oc = oflds.ToString().Split(',')[0];
-                    objForSet = esri_oc;              // prepare for SetObjectidfeilds
-                    ObjidCol.SelectString = "ESRI_OID";  //updateprop
-                    hasObj = true;
-                        cpd.Message = "This data has a valid key field to use for OBJECTID.";
+                    else
+                    {
+                        _objidCol.SelectString = "";
                     }
-                if (objfieldcount > 1)
-                {
-                    //fix backslash slash bug
-                    //string fldLst = "";
-                    //int cnt = 0;
+                    dr.Close();
+                    if (Globals.hanaConn.State != ConnectionState.Closed)
+                        Globals.hanaConn.Close();
 
-                    //foreach (Field fld in lst)
-                    //{
-                    //    //fix bug with slash in column namestring
-                    //    if (fld.Name.IndexOfAny(new char[] { ' ', '/', '\\' }) != -1)
-                    //    {
-                    //        var f = '"' + fld.Name + '"';
-                    //        if (cnt == 0)
-                    //        {
-                    //            fldLst = fldLst + f;  //first field don't put a comma
-                    //        }
-                    //        else
-                    //        {
-                    //            fldLst = fldLst + "," + f;
-                    //        }
-                    //        hasSlashes = true;
-                    //    }
-                    //    else
-                    //    {
-                    //        if (cnt == 0)
-                    //        {
-                    //            fldLst = fldLst + fld.Name;
-                    //        }
-                    //        else
-                    //        {
-                    //            fldLst = fldLst + "," + fld.Name;
-                    //        }
-                    //    }
+                    //open an Esri database connection type to hana
+                    ComboBoxItem item2 = (ComboBoxItem)cboEnv.cboBox.SelectedItem;
+                    ConnectionItem connitem = item2.Icon as ConnectionItem;
+                    string tst2 = new System.Net.NetworkCredential(string.Empty, connitem.pass).Password;
+                    string serverport = connitem.server.ToString();
+                    string inst = serverport.Substring(0, serverport.IndexOf(":"));
 
-                    //    cnt = cnt + 1;
-                    //}
-                    //objForSet = fldLst;   // prepare for SetObjectidfeilds
+                    DatabaseConnectionProperties connectionProperties = new DatabaseConnectionProperties(EnterpriseDatabaseType.Hana)
+                    {
+                        AuthenticationMode = AuthenticationMode.DBMS,
+                        Instance =  inst,  //cboEnv.cboBox.Text, //@"sapqe2hana",
+                        User = connitem.userid,
+                        Password = tst2,
+                        Version = "dbo.DEFAULT"
+                    };
 
-                    //just use first field in lst as objid
-                    objForSet = oflds.ToString().Split(',')[0];
-                    ObjidCol.SelectString = "multi";    //updateprop
-                    hasObj = true;
-                        cpd.Message = "This data has a valid key field to use for OBJECTID.";
+                    //variables needed from qds first
+                    string db_sc = SpatialCol.SelectString;
+                    string db_oc = ObjidCol.SelectString;
+
+                    string qtest = _querytext.SelectString.Trim();
+                    string oflds = "";
+                    IReadOnlyList<Field> lst;
+                    string esri_sc = "";
+                    string esri_oc = "";
+                    GeometryType st = GeometryType.Unknown;
+                    SpatialReference sr = null;
+                    string sri = "";
+
+                    using (Database db = new Database(connectionProperties))
+                    {
+                        if (qtest.Length < 1)
+                        {
+                            _strMessage.SelectString = "Empty Sql.";
+                            BtnMapVis = false;
+                            return;
+                        }
+                        else
+                        {
+                            QueryDescription qds = db.GetQueryDescription(qtest, lyrname);
+                            lst = qds.GetFields();
+                            oflds = qds.GetObjectIDFields();
+                            esri_sc = qds.GetShapeColumnName();
+                            esri_oc = qds.GetObjectIDColumnName();
+                            st = qds.GetShapeType();
+                            sr = qds.GetSpatialReference();
+                            sri = qds.GetSRID();
+                        }
                     }
 
-                //==================determine is shape field
-                if (esri_sc != null && esri_sc != "")
-                {
-                    //determine shape type
-                    //TODO 
+                    if (lst == null)   //table has no fields
+                        return;
 
-                    //determine if it should be converted to .st_aswkt
-                    //TODO
+                    //now do work with variables from qds
+                    int objfieldcount = oflds.Split(',').Length - 1;
+                    string objForSet = "";
+                    string fakeObjSql = "";
+                    bool hasShape = false;
+                    //bool hasSlashes = false;
 
-                    SpatialCol.SelectString = esri_sc;
-                    hasShape = true;
-                    cpd.Message = "This data has a valid shapefield";
+                    //==============determine field to use for objectid - pro requires a pk - can't assume the field name OBJECTID in HANA is a valid field type to use for objectid according to Esri...
 
+                    if (objfieldcount == 0)
+                    {
+                        if (db_oc != "")  //does db think there is a pk?
+                        {
+                            _strMessage.SelectString = "Tried to create key.";
+                            ObjidCol.SelectString = db_oc;
+                            objForSet = db_oc;
+                        }
+                        else   //it is possible (bug? that esri still can determine the objid eventhough we have already asked w objfieldcount method
+                        {
+                            _strMessage.SelectString = "Tried to create key.";
+                            ObjidCol.SelectString = esri_oc;
+                            objForSet = esri_oc;
+                        }
+
+                        //if (lst != null && lst.Count > 0)
+                        //{
+                        //    string oc = lst[0].Name;  //use this as a dummy field to put the partition statement in (as long as it is not named "OBJECTID" esri crashes)
+
+                        //    fakeObjSql = ", row_number()" + " over(partition by " + oc + ")" + " as QID ";
+                        //    objForSet = "QID";
+                        //    ObjidCol.SelectString = "QID";
+                        //    _strMessage.SelectString = "Tried to create key.";
+                        //    cpd.Message = "Tried to create key.";
+                        //}
+                    }
+                    if (objfieldcount == 1)
+                    {
+                        esri_oc = oflds.ToString().Split(',')[0];
+                        objForSet = esri_oc;              // prepare for SetObjectidfeilds
+                        ObjidCol.SelectString = objForSet;  //updateprop
+                        cpd.Message = "Found valid key field.";
+                    }
+                    if (objfieldcount > 1)
+                    {
+                        //fix backslash slash bug
+                        //string fldLst = "";
+                        //int cnt = 0;
+
+                        //foreach (Field fld in lst)
+                        //{
+                        //    //fix bug with slash in column namestring
+                        //    if (fld.Name.IndexOfAny(new char[] { ' ', '/', '\\' }) != -1)
+                        //    {
+                        //        var f = '"' + fld.Name + '"';
+                        //        if (cnt == 0)
+                        //        {
+                        //            fldLst = fldLst + f;  //first field don't put a comma
+                        //        }
+                        //        else
+                        //        {
+                        //            fldLst = fldLst + "," + f;
+                        //        }
+                        //        hasSlashes = true;
+                        //    }
+                        //    else
+                        //    {
+                        //        if (cnt == 0)
+                        //        {
+                        //            fldLst = fldLst + fld.Name;
+                        //        }
+                        //        else
+                        //        {
+                        //            fldLst = fldLst + "," + fld.Name;
+                        //        }
+                        //    }
+
+                        //    cnt = cnt + 1;
+                        //}
+                        //objForSet = fldLst;   // prepare for SetObjectidfeilds
+
+                        //just use first field in lst as objid
+                        objForSet = oflds.ToString().Split(',')[0];
+                        ObjidCol.SelectString = "multi";    //updateprop
+                        cpd.Message = "found valid keys.";
+                    }
+
+                    //==================determine is shape field
+                    if (esri_sc != null && esri_sc != "")
+                    {
+                        //determine shape type
+                        //TODO 
+
+                        //determine if it should be converted to .st_aswkt
+                        //TODO
+
+                        SpatialCol.SelectString = esri_sc;
+                        hasShape = true;
+                        cpd.Message = "Found valid shapefield";
                     }
                     else
-                {
-                    // //if (db_sc != "none")   // (data_type_id = 29812)
-                    //TODO - why does db think there is an ST_GEOMETRY and esri doesn't?
-                    SpatialCol.SelectString = "none";
-                        cpd.Message = "This data does  not have a valid shapefield";
+                    {
+                        // //if (db_sc != "none")   // (data_type_id = 29812)
+                        //TODO - why does db think there is an ST_GEOMETRY and esri doesn't?
+                        SpatialCol.SelectString = "none";
+                        cpd.Message = "No valid shapefield";
                     }
 
-                //==============fix the sql statement based on new knowledge
-                string qtest1 = "";
-                string qtest2 = "";
-                //add conversion for objid to ssql
-                if (hasObj == false)
-                {
-                    int inx = qtest.IndexOf("FROM") - 1;
-                    qtest1 = qtest.Insert(inx, fakeObjSql);
-                }
-                else
-                {
-                    qtest1 = qtest;
-                }
-                //add conversion for shape to sql
-                if (hasShape)
-                {
-                    qtest2 = qtest1; // qtest1.Replace(esri_sc, esri_sc + ".st_aswkt()" + " as " + esri_sc);
-                }
-                else
-                {
-                    qtest2 = qtest1;
-                }
-
-                //=============finally add to map
-                Database db2 = new Database(connectionProperties);
-                QueryDescription qdsfinal = db2.GetQueryDescription(qtest2, lyrname);  //reapply with new sql statement
-
-                if (objForSet == "none")
-                {
-                    MessageBox.Show("This table does not have a valid key field in the database.  Pro requires at least one field that can be used as an Objectid field. The field must be not null, contain unique values, and be one of the following data types: Integer, string, GUID or Date.");
-                }
-                else if (objForSet != "none")
-                {
-                    qdsfinal.SetObjectIDFields(objForSet);
-                }
-
-                //qdsfinal.SetShapeType(GeometryType.Point);
-                //qdsfinal.SetSpatialReference;
-                //qdsfinal.SetSRID
-
-                Table pTab2 = db2.OpenTable(qdsfinal);
-
-                if (hasShape)
-                {
-                    // Add a new layer to the map
-                    FeatureLayer pFL = (FeatureLayer)LayerFactory.Instance.CreateLayer(pTab2.GetDataConnection(), MapView.Active.Map, layerName: lyrname);
-                    pFL.Select(null, SelectionCombinationMethod.New);
-                    MapView.Active.ZoomToSelected();
-                    pFL.ClearSelection();
-
-                    _strMessage.SelectString = "Layer added.";
-                     cpd.Message = "Layer added successsful to map.";
-                        MessageBox.Show("Layer added successsful to map.");
+                    //===========add objectid fake code to sql statement
+                    string qtest1 = "";
+                    string qtest2 = "";
+                    
+                    //add conversion for objid to ssql
+                    if (objForSet == "QID")
+                    {
+                        int inx = qtest.IndexOf("FROM") - 1;
+                        qtest1 = qtest.Insert(inx, fakeObjSql);
                     }
                     else
-                {
+                    {
+                        qtest1 = qtest;
+                    }
 
-                    //if (objForSet != "none")
-                    //{
-                    //    if (hasSlashes)
-                    //    { qdsfinal.SetObjectIDFields(objForSet); }
-                    //}
+                    //=============add conversion for shape to sql
+                    if (hasShape)
+                    {
+                        qtest2 = qtest1; // qtest1.Replace(esri_sc, esri_sc + ".st_aswkt()" + " as " + esri_sc);
+                    }
+                    else
+                    {
+                        qtest2 = qtest1;
+                    }
 
-                    StandaloneTable pFL = (StandaloneTable)StandaloneTableFactory.Instance.CreateStandaloneTable(pTab2.GetDataConnection(), MapView.Active.Map, tableName: lyrname);
-                    _strMessage.SelectString = "Table added.";
-                     cpd.Message = "Standalone table added successsful to map.";
-                     MessageBox.Show("Standalone table added successsful to map.");
+                    //=====================add to map
+                    if (Globals.hanaConn.State != ConnectionState.Closed)
+                        Globals.hanaConn.Close();
+                    using (Database db2 = new Database(connectionProperties))
+                    {
+                        QueryDescription qdsfinal = db2.GetQueryDescription(qtest2, lyrname);  //reapply with new sql statement
+
+                        //set additional parameters to help arcgispro 
+                        if (objfieldcount == 0 && db_oc != "none")
+                        {
+                            MessageBox.Show("ArcGIS Pro does not detect a key for this table. The Q Pro for SAP addin will attempt to use the SAP database key.");
+                            //qdsfinal.SetObjectIDFields(objForSet);  
+                        }
+                        else if (objForSet != "")
+                        {
+                            if (objForSet == "QID")
+                            {
+
+                                MessageBox.Show("ArcGIS Pro does not detect a key for this table.. The Q Pro for SAP addin will attempt to create a temporary key.");
+                                //THIS FAILS qdsfinal.SetObjectIDFields(objForSet);
+                            }
+                            else
+                            {
+                                qdsfinal.SetObjectIDFields(objForSet);
+                            }
+                        }
+
+                        //qdsfinal.SetShapeType(GeometryType.Point);
+                        //qdsfinal.SetSpatialReference;
+                        //qdsfinal.SetSRID
+
+                        Table pTab2 = db2.OpenTable(qdsfinal);
+
+                        if (hasShape)
+                        {
+                            // Add a new layer to the map
+                            FeatureLayer pFL = (FeatureLayer)LayerFactory.Instance.CreateLayer(pTab2.GetDataConnection(), MapView.Active.Map, layerName: lyrname);
+                            pFL.Select(null, SelectionCombinationMethod.New);
+                            MapView.Active.ZoomToSelected();
+                            pFL.ClearSelection();
+
+                            _strMessage.SelectString = "Layer added.";
+                            cpd.Message = "Layer added successsful to map.";
+                            MessageBox.Show("Layer added successsful to map.");
+                            return;
+                        }
+                        else
+                        {
+                            StandaloneTable pFL = (StandaloneTable)StandaloneTableFactory.Instance.CreateStandaloneTable(pTab2.GetDataConnection(), MapView.Active.Map, tableName: lyrname);
+                            _strMessage.SelectString = "Table added.";
+                            cpd.Message = "Standalone table added successsfuly to map.";
+                            MessageBox.Show("Standalone table added successsfuly to map.");
+                        }
+
                     }
                     cpd.Dispose();
+                    
                 });
-                
+
             }
             catch (Exception ex)
             {
-                MessageBox.Show("The table could not be added to ArcGIS Pro.  " + ex.Message.ToString() + " ArcGIS Pro requires a primary key and/or a valid spatial field of type ST_GEOMETRY. ");
+                lock (_aLock)
+                { BtnMapVis = false; }
+                
+                MessageBox.Show("The table could not be added to ArcGIS Pro.  " + ex.Message.ToString() );
+                if (Globals.hanaConn.State != ConnectionState.Closed)
+                    Globals.hanaConn.Close();
+
             }
 
         }
@@ -945,7 +1063,8 @@ namespace SapHanaAddIn
                 }
                 else
                 {
-                    Globals.hanaConn.Close();
+                    if (Globals.hanaConn.State != ConnectionState.Closed)
+                        Globals.hanaConn.Close();
                     Globals.hanaConn = null;
                     Globals.hanaConn = new HanaConnection();
                 }
@@ -1002,7 +1121,7 @@ namespace SapHanaAddIn
                     wrapper3.Checked = false;
                 }
 
-                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("A connection could not be made to the chosen environment. " + ex.Message.ToString() + "Please check database connection parameters." );
+                ArcGIS.Desktop.Framework.Dialogs.MessageBox.Show("A connection could not be made to the chosen environment. " + ex.Message.ToString() + "  Please check database connection parameters." );
             }
         }
 

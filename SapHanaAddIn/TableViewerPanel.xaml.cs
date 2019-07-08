@@ -121,6 +121,8 @@ namespace SapHanaAddIn
 
         public async Task ExecuteSqlCb()
         {
+            try { 
+
             await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(() =>
             {
                 bool dpexists = FrameworkApplication.DockPaneManager.IsDockPaneCreated("SapHanaAddIn_TableViewerPanel");
@@ -132,10 +134,14 @@ namespace SapHanaAddIn
             });
 
         }
+                    catch (Exception ex)
+            { MessageBox.Show("Error  :  " + ex.Message.ToString() + " "); }
+
+}
 
         public async Task AddToTOCCb()
         {
-            
+            try { 
 
             await QueuedTask.Run(() =>
             {
@@ -147,10 +153,14 @@ namespace SapHanaAddIn
                     //var pd = new ProgressDialog("Adding data to map.", "Canceled", false);
                     //pd.Show();
                     var cpd = new CancelableProgressorSource();
-                   
+
                     Task r = vm.AddToTOCCallback(cpd);
                 }
             });
+
+            }
+                catch (Exception ex)
+                { MessageBox.Show("Error  :  " + ex.Message.ToString() + " "); }
         }
 
         //this is for datagrid right click context menu
