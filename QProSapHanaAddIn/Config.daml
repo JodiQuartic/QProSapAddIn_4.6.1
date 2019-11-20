@@ -1,0 +1,92 @@
+﻿<ArcGIS defaultAssembly="QProSapAddIn.dll" defaultNamespace="QProSapAddIn" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
+  <AddInInfo id="{9981ecfc-db03-4ff9-9f1f-19c092cfecc7}" version="1.0" desktopVersion="2.4.2">
+    <Name>QProSapAddIn</Name>
+    <Description>An Esri ArcGIS® Pro Add-In for connecting, exploring and publishing SAP data</Description>
+    <Image>Images\qpro-rgb-saponly.png</Image>
+    <Author>Quartic Solutions</Author>
+    <Company>Quartic Solutions</Company>
+    <Date>6/21/2018 7:46:04 PM, 2018</Date>
+    <Subject>Integration of SAP into Esri</Subject>
+    <!-- Note subject can be one or more of these topics:
+                    Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
+  </AddInInfo>
+  
+  <conditions>
+    <insertCondition id="condition_isconnected" caption="Are we connected">
+      <state id="condition_state_isconnected" />
+    </insertCondition>
+    <insertCondition id="condition_notReady" caption="Tool coming with next version">
+      <state id="condition_state_notReady" />
+    </insertCondition>
+  </conditions>
+  
+  <modules>
+    <insertModule id="SapConfigModule" className="SapConfigModule" autoLoad="false" caption="Sap Config Settings">
+      <tabs>
+        <tab id="QProSapAddIn_Tab1" caption="SAP Tools" keytip="s">
+          <group refID="QProSapAddIn_Grp1" />
+          <group refID="QProSapAddIn_Grp2" />
+        </tab>
+      </tabs>
+      <groups>
+        <!-- comment this out if you have no controls on the Addin tab to avoid an empty group-->
+        <group id="QProSapAddIn_Grp1" caption="SAP Connections" appearsOnAddInTab="false" keytip="a">
+          <subgroup refID="sub_Grp1" />
+        </group>
+        <group id="QProSapAddIn_Grp2" caption="SAP Tools" appearsOnAddInTab="false" keytip="b">
+         
+          <button refID="QProSapAddIn_TableViewerPanel_ShowButton" size="large" />
+          <button refID="btnSAPFind" size="large" />
+          <button refID="btnSAPIdentify" size="large" />
+          <button refID="toolSAPIdentify" size="large" />
+          <button refID="btnFindSpatial" size="large" />
+          <button refID="btnSqlExplorer" size="large" />
+          <button refID="btnSAPConflictDetection" size="large" />
+        </group>
+      </groups>
+      <subgroups>
+        <!-- Can only have 3 items in a subgroup-->
+        <subgroup id="sub_Grp1" size="MediumThenSmallWhenSmall" verticalAlignment="Center">
+          <comboBox refID="cboEnv" />
+          <button refID="btnConnect" />
+          <labelControl refID="lblHasConn"  />
+        </subgroup>
+      </subgroups>
+      <controls>
+        <!-- add your controls here -->
+        <comboBox id="cboEnv" disableIfBusy="true" isEditable="false" className="cboEnv"  isReadOnly="true" keytip="SV" itemWidth="120" caption="Environment: ">
+          <tooltip heading="Connect To the selected DB">
+            <disabledText>Pick a DB from the dropdown. </disabledText>
+          </tooltip>
+        </comboBox>
+        <button id="btnConnect" disableIfBusy="true"  condition="condition_hasProps" keytip="Connect To DB" caption=" " className="btnConnect" loadOnClick="true">
+        </button>
+        <button id="btnSqlExplorer" disableIfBusy="true"  condition="condition_isconnected" keytip="Explore DB using Sql" caption="SQL Explorer" className="btnSqlExplorer" loadOnClick="true" smallImage="Images\table_view.ico" largeImage="Images\table2_view.png">
+        </button>
+        <button id="btnFindSpatial" disableIfBusy="true"  condition="condition_isconnected" keytip="Find Tables with Spatial Columns" caption="Find Spatial Tables" className="btnFindSpatial" loadOnClick="true" smallImage="Images\find16.png" largeImage="Images\find32.png">
+        </button>
+        <button id="btnSAPFind" disableIfBusy="true" condition="condition_notReady" keytip="Locate SAP Object" caption="Find by ID" className="btnSAPFind" loadOnClick="true" smallImage="Images\Find16.png" largeImage="Images\data_find.png" />
+        <tool id="toolSAPIdentify" disableIfBusy="true" condition="condition_notReady" keytip="Display SAP asset" caption="Identify SAP" className="toolSAPIdentify" loadOnClick="true" largeImage="Images\environment_view.png" />
+        <button id="btnSAPIdentify" disableIfBusy="true" condition="condition_notReady" keytip="Display GIS asset" caption="Identify GIS" className="btnSAPIdentify" loadOnClick="true" largeImage="Images\environment_information.png" />
+        <button id="btnSAPConflictDetection" disableIfBusy="true" condition="condition_notReady" keytip="Select assets from map and compare the data in SAP with data in GIS" caption="Find Conflicts" className="btnConflictDetection" loadOnClick="true" smallImage="Images\VersionChange16.png" largeImage="Images\selection_replace.png" />
+      </controls>
+      <dockPanes>
+        <dockPane id="QProSapAddIn_TableViewerPanel" caption="SAP Data  Explorer" 
+                  className="TableViewerPanelViewModel" dockWith="esri_core_contentsDockPane" condition="condition_isconnected" dock="float" width="500" >
+          <content className="TableViewerPanel"  />
+        </dockPane>
+        <dockPane id="QProSapAddIn_SpatialTableFinder" caption="Find Spatial  Tables"
+                 className="SpatialTableFinderViewModel" dockWith="esri_core_contentsDockPane" condition="condition_isconnected" dock="float" width="500" >
+          <content className="SpatialTableFinder"  />
+        </dockPane>
+      </dockPanes>
+    </insertModule>
+  </modules>
+  <propertySheets>
+    <updateSheet refID="esri_core_optionsPropertySheet">
+      <insertPage id="QProSapAddIn_SapProperties" caption="SAP Properties" className="SapPropertiesViewModel" group="Project">
+        <content className="SapPropertiesView" />
+      </insertPage>
+    </updateSheet>
+  </propertySheets>
+</ArcGIS>

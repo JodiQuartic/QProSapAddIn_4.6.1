@@ -1,0 +1,114 @@
+﻿<UserControl x:Class="QProSapAddIn.TableViewerPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"   
+             xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="500"
+             d:DataContext="{Binding Path=ui.TableViewerPanelViewModel}" >
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <extensions:DesignOnlyResourceDictionary Source="pack://application:,,,/ArcGIS.Desktop.Framework;component\Themes\Default.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+
+    <DockPanel Name="dpMain" HorizontalAlignment="Stretch" Width="auto" MinWidth="500" MinHeight="600" MaxHeight="600" VerticalAlignment="Top">
+
+        <StackPanel Orientation="Vertical" Width="auto" VerticalAlignment="Top">
+
+            <TextBlock Text="{Binding Heading}" Margin="3,3,5,3" Style="{DynamicResource Esri_TextBlockDockPaneHeader}" VerticalAlignment="Top">
+            </TextBlock>
+
+            <DockPanel KeyboardNavigation.TabNavigation="Local" Width="auto" Margin="1,1,1,1">
+
+                <StackPanel Orientation="Horizontal" Width="auto">
+                    <TextBlock   HorizontalAlignment="Left"  Height="25" Text="  Schemas " Style="{DynamicResource Esri_TextBlockH3}" ></TextBlock>
+                    <ComboBox   HorizontalAlignment="Left"  Height="25" Width="150" Name="cboSchemas"  
+                                ItemsSource="{Binding SchemaColl}"
+                                SelectedItem="{Binding CurrentSchema}"
+                                Text="Select Schema First..."
+                                Loaded="cboSchemas_DropDownOpened"
+                                SelectionChanged="cboSchemas_SelectionChanged" />
+                    <TextBlock  HorizontalAlignment="Left"  Height="25" Text="  Tables "  Style="{DynamicResource Esri_TextBlockH3}"  ></TextBlock>
+                    <ComboBox  HorizontalAlignment="Left"  Height="25" Width="150" Name="cboTables" SelectionChanged="cboTables_SelectionChanged" 
+                        ItemsSource="{Binding Tables}"  SelectedItem="{Binding CurrentTable}"  />
+                </StackPanel>
+
+            </DockPanel>
+
+            <DockPanel KeyboardNavigation.TabNavigation="Local" Height="75" Width="Auto" Margin="3,3,3,3"  >
+
+                <TextBox Name="txtQueryText" TextWrapping="Wrap"  Height="60" Width="auto"  
+                     Background="{DynamicResource Esri_BackgroundPressedBrush}" 
+                     Foreground="{DynamicResource Esri_TextStyleDefaultBrush}" 
+                     Text="{Binding QueryTxt.SelectString}"                               
+                         VerticalScrollBarVisibility="Visible" IsEnabled="False" >
+                </TextBox>
+
+            </DockPanel>
+
+            <Button x:Name="btnExecute" HorizontalAlignment="Right" Style="{DynamicResource Esri_Button}"
+                         Content="Execute SQL" Click="btnExecute_Click" IsEnabled="{Binding BtnExeVis}"></Button>
+            
+            <TextBlock Text="{Binding Heading2}" Margin="3,3,5,3" Style="{DynamicResource Esri_TextBlockDockPaneHeader}">
+            </TextBlock>
+            
+               <DataGrid Name="dgForResults" HorizontalAlignment="Stretch" 
+                          Width="Auto" MinWidth="500" MinHeight="99" MaxHeight="99" 
+                                  Style="{DynamicResource Esri_DataGrid}"
+                                ScrollViewer.CanContentScroll="True"      
+                              IsReadOnly="False" 
+                              AutoGenerateColumns="True"
+                              HeadersVisibility="Column"
+                              HorizontalScrollBarVisibility="Visible"
+                              VerticalScrollBarVisibility="Visible"
+                              ColumnWidth="SizeToHeader" 
+                          SelectionChanged="DgForResults_SelectionChanged"
+                              ItemsSource="{Binding Results}">
+                </DataGrid>
+   
+                    <Button Name="btnAddTOC" Content="Add to Map"  HorizontalAlignment="Right" Click="btnAddTOC_Click"
+                            Style="{DynamicResource Esri_Button}" IsEnabled="{Binding BtnMapVis}">
+            </Button>
+
+            <DockPanel>
+                <StatusBar Background="LightGray" HorizontalAlignment="Stretch" Width="auto">
+                    <StatusBarItem HorizontalAlignment="Left" >
+                        <!--TextBlock Name="txtTotRecCount"  Text="{Binding TotRecCount.SelectString, StringFormat='Total: {0}'}"          
+                                ToolTip="Total number of rows in the database table"
+                                   Foreground="Black"            
+                                    VerticalAlignment="Center"/-->
+                    </StatusBarItem>
+                    <StatusBarItem HorizontalAlignment="Left" >
+                        <TextBlock Name="txtActRecCount"  Text="{Binding ActRecCount.SelectString, StringFormat='Rows returned: {0}'}"          
+                                ToolTip="Number of rows returned from the database using the sql statement"
+                                   Foreground="Black"          
+                                    VerticalAlignment="Center"/>
+                    </StatusBarItem>
+                    <StatusBarItem HorizontalAlignment="Left">
+                        <TextBlock  Name="txtSpatialCol" Text="{Binding SpatialCol.SelectString, StringFormat='Spatial: {0}'}" ToolTip="Field name that is Spatial Type"
+                                   VerticalAlignment="Center"
+                                  Foreground="Black"  />
+                    </StatusBarItem>
+                    <StatusBarItem HorizontalAlignment="Left" >
+                        <TextBlock Name="txtObjidCol"  Text="{Binding ObjidCol.SelectString ,StringFormat='Objectid: {0}'}" ToolTip="Field name that is a Primary Key"
+                                   Foreground="Black"            
+                                    VerticalAlignment="Center"/>
+                    </StatusBarItem>
+                    <StatusBarItem HorizontalAlignment="Left" >
+                        <TextBlock Name="txtMessage"  Text="{Binding StrMessage.SelectString}" ToolTip="Field name that is a Primary Key"
+                                   Foreground="Black"            
+                                    VerticalAlignment="Center"/>
+                    </StatusBarItem>
+                </StatusBar>
+            </DockPanel>
+
+        </StackPanel>
+
+    </DockPanel>
+</UserControl>
