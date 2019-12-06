@@ -1,0 +1,63 @@
+﻿<UserControl x:Class="QProSapAddIn.SpatialTableFinder"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"   
+             xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
+             mc:Ignorable="d" 
+             d:DataContext="{Binding Path=ui.SpatialTableFinderViewModel}" >
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <extensions:DesignOnlyResourceDictionary Source="pack://application:,,,/ArcGIS.Desktop.Framework;component\Themes\Default.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <DockPanel Name="dpMain2" Width="auto" Height="Auto" HorizontalAlignment="Stretch">
+        <StackPanel Orientation="Vertical" Width="auto" Height="auto" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+
+            <TextBlock Text="{Binding Heading}" Margin="3,3,5,3" Style="{DynamicResource Esri_TextBlockDockPaneHeader}" VerticalAlignment="Top">
+            </TextBlock>
+
+            <Button Name="btnGetSpatTabs" Content="Find Tables"  HorizontalAlignment="Right" Click="btnGetSpatTabs_Click"
+                            Style="{DynamicResource Esri_Button}" IsEnabled="{Binding BtnGetSpatVis}">
+            </Button>
+
+            <DataGrid Name="dgForResults2"  Height="150" Width="auto"  
+                                  Style="{DynamicResource Esri_DataGrid}"
+                                ScrollViewer.CanContentScroll="True"      
+                              IsReadOnly="True" 
+                              AutoGenerateColumns="True"
+                              HeadersVisibility="Column"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              ColumnWidth="SizeToHeader" 
+                              Grid.Row="0"
+                              ItemsSource="{Binding Results}"
+                          SelectionChanged="DgForResults2_SelectionChanged" 
+                          SelectionMode="Single" SelectionUnit="FullRow">
+            </DataGrid>
+
+            <Button Name="btnAddMap" Content="Add Selected Row to Map"  HorizontalAlignment="Right" Click="btnAddMap2_Click"
+                            Style="{DynamicResource Esri_Button}" IsEnabled="{Binding dgForResults2.Rows[0].Selected}">
+            </Button>
+
+       
+
+        <StatusBar Background="LightGray" VerticalAlignment="Bottom" >
+
+            <StatusBarItem HorizontalAlignment="Left">
+                <TextBlock Name="txtTabCount"  Text="{Binding TabCount.SelectString, StringFormat='Number of tables returned: {0}'}"          
+                                ToolTip="Number of rows returned from the database using the sql statement"
+                                   Foreground="Black"          
+                                    VerticalAlignment="Center"/>
+            </StatusBarItem>
+        </StatusBar>
+
+        </StackPanel>
+        
+    </DockPanel>
+
+</UserControl>
